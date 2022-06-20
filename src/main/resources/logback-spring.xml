@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="Console"
+        class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}][%-5level][%logger{36}.%M.%L] - %msg%n</Pattern>
+        </layout>
+    </appender>
+
+    <appender name="GeneralRollFile"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/pntmall-admin.log</file>
+        <encoder
+            class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <Pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}][%-5level][%logger{36}.%M.%L] - %msg%n</Pattern>
+        </encoder>
+
+        <rollingPolicy
+            class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>
+                ${LOG_PATH}/archived/pntmall-admin-%d{yyyy-MM-dd}-%i.log
+            </fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy
+                class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>50MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+    </appender>
+
+    <springProfile name="local">
+        <logger name="org.apache" level="info">
+            <appender-ref ref="Console"/>
+        </logger>
+
+        <logger name="org.mybatis" level="info">
+            <appender-ref ref="Console"/>
+        </logger>
+
+        <logger name="sql.query" level="debug">
+            <appender-ref ref="Console" />
+        </logger>
+
+        <logger name="sql.result" level="debug">
+            <appender-ref ref="Console" />
+        </logger>
+
+        <logger name="jdbc.sqlonly" level="debug">
+            <appender-ref ref="Console" />
+        </logger>
+
+        <logger name="jdbc.resultsettable" level="debug">
+            <appender-ref ref="Console" />
+        </logger>
+
+        <logger name="com.pntmall" level="debug">
+            <appender-ref ref="Console" />
+        </logger>
+
+        <logger name="org.springframework" level="info">
+            <appender-ref ref="Console" />
+        </logger>
+
+        <logger name="io.lettuce.core" level="info">
+            <appender-ref ref="Console" />
+        </logger>
+    </springProfile>
+
+    <springProfile name="dev">
+        <logger name="org.apache" level="info">
+            <appender-ref ref="GeneralRollFile"/>
+        </logger>
+
+        <logger name="org.mybatis" level="info">
+            <appender-ref ref="GeneralRollFile"/>
+        </logger>
+
+        <logger name="sql.query" level="debug">
+            <appender-ref ref="GeneralRollFile" />
+        </logger>
+
+        <logger name="sql.result" level="debug">
+            <appender-ref ref="GeneralRollFile" />
+        </logger>
+
+        <logger name="jdbc.sqlonly" level="debug">
+            <appender-ref ref="GeneralRollFile" />
+        </logger>
+
+        <logger name="jdbc.resultsettable" level="debug">
+            <appender-ref ref="GeneralRollFile" />
+        </logger>
+
+        <logger name="com.pntmall" level="debug">
+            <appender-ref ref="GeneralRollFile" />
+        </logger>
+
+        <logger name="org.springframework" level="info">
+            <appender-ref ref="GeneralRollFile" />
+        </logger>
+
+        <logger name="io.lettuce.core" level="info">
+            <appender-ref ref="GeneralRollFile" />
+        </logger>
+    </springProfile>
+
+    <springProfile name="real">
+        <logger name="org.apache" level="info">
+            <appender-ref ref="GeneralRollFile"/>
+        </logger>
+
+        <logger name="org.mybatis" level="debug">
+            <appender-ref ref="GeneralRollFile"/>
+        </logger>
+
+        <logger name="sql.query" level="debug">
+            <appender-ref ref="GeneralRollFile" />
+        </logger>
+
+        <logger name="sql.result" level="debug">
+            <appender-ref ref="GeneralRollFile" />
+        </logger>
+
+        <logger name="jdbc.sqlonly" level="debug">
+            <appender-ref ref="GeneralRollFile" />
+        </logger>
+
+        <logger name="jdbc.resultsettable" level="debug">
+            <appender-ref ref="GeneralRollFile" />
+        </logger>
+
+        <logger name="com.pntmall" level="debug">
+            <appender-ref ref="GeneralRollFile" />
+        </logger>
+
+        <logger name="org.springframework" level="info">
+            <appender-ref ref="GeneralRollFile" />
+        </logger>
+
+        <logger name="io.lettuce.core" level="info">
+            <appender-ref ref="GeneralRollFile" />
+        </logger>
+    </springProfile>
+
+</configuration>

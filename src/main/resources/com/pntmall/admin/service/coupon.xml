@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Coupon">
+	<select id="list" parameterType="CouponSearch" resultType="Coupon">
+		<![CDATA[
+		SELECT A.COUPONID,
+			   CASE WHEN A.GUBUN = 1 THEN '제품쿠폰'
+			   		ELSE '배송비쿠폰' END AS GUBUN_NAME,
+			   A.TITLE,
+			   A.SDATE,
+			   A.EDATE,
+			   CASE WHEN A.STATUS = 'S' THEN '활성'
+			   		ELSE '비활성' END AS STATUS_NAME,
+			   CASE WHEN A.SDATE > DATE_FORMAT(NOW(), '%Y.%m.%d') THEN '대기중'
+			   		WHEN A.EDATE < DATE_FORMAT(NOW(), '%Y.%m.%d') THEN '종료'
+			   		ELSE '진행가능' END AS STATUS2_NAME,
+			   (SELECT COUNT(*) FROM T_MCOUPON WHERE COUPONID = A.COUPONID) AS TOT_CNT,
+			   (SELECT COUNT(*) FROM T_MCOUPON WHERE COUPONID = A.COUPONID AND USE_DATE IS NOT NULL) AS TOT_USE_CNT
+		  FROM T_COUPON A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(sdate)">
+			<![CDATA[
+		   AND A.SDATE <= #{sdate}
+		   	]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(edate)">
+			<![CDATA[
+		   AND A.SDATE >= #{edate}
+		   	]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status1)">
+		   AND A.STATUS = #{status1}
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@notEmpty(status2) and status2 eq "1"'>
+		   AND A.SDATE > DATE_FORMAT(NOW(), '%Y.%m.%d')
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@notEmpty(status2) and status2 eq "2"'>
+			<![CDATA[
+		   AND A.SDATE <= DATE_FORMAT(NOW(), '%Y.%m.%d')
+		   AND A.EDATE >= DATE_FORMAT(NOW(), '%Y.%m.%d')
+		   	]]>
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@notEmpty(status2) and status2 eq "3"'>
+			<![CDATA[
+		   AND A.EDATE < DATE_FORMAT(NOW(), '%Y.%m.%d')
+		   	]]>
+		</if>
+		ORDER BY COUPONID DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="CouponSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_COUPON A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(sdate)">
+			<![CDATA[
+		   AND A.SDATE <= #{sdate}
+		   	]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(edate)">
+			<![CDATA[
+		   AND A.SDATE >= #{edate}
+		   	]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status1)">
+		   AND A.STATUS = #{status1}
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@notEmpty(status2) and status2 eq "1"'>
+		   AND A.SDATE > DATE_FORMAT(NOW(), '%Y.%m.%d')
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@notEmpty(status2) and status2 eq "2"'>
+			<![CDATA[
+		   AND A.SDATE <= DATE_FORMAT(NOW(), '%Y.%m.%d')
+		   AND A.EDATE >= DATE_FORMAT(NOW(), '%Y.%m.%d')
+		   	]]>
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@notEmpty(status2) and status2 eq "3"'>
+			<![CDATA[
+		   AND A.EDATE < DATE_FORMAT(NOW(), '%Y.%m.%d')
+		   	]]>
+		</if>
+	</select>
+
+	<select id="info" parameterType="java.lang.String" resultType="Coupon">
+		SELECT COUPONID,
+		       GUBUN,
+		       TITLE,
+		       SDATE,
+		       EDATE,
+		       EXPIRE,
+		       TARGET,
+		       DISCOUNT_TYPE,
+		       DISCOUNT,
+		       MIN_PRICE,
+		       MAX_DISCOUNT,
+		       STATUS,
+		       CUSER,
+		       CDATE,
+		       UUSER,
+		       UDATE,
+		       <include refid="Common.userid">
+		       	<property name="alias" value="A" />
+		       </include> 
+		  FROM T_COUPON A
+		 WHERE COUPONID = #{couponid}
+	</select>
+	
+	<insert id="insert" parameterType="Coupon">
+		INSERT INTO T_COUPON (
+			COUPONID,
+			GUBUN,
+			TITLE,
+			SDATE,
+			EDATE,
+			EXPIRE,
+			TARGET,
+			DISCOUNT_TYPE,
+			DISCOUNT,
+			MIN_PRICE,
+			MAX_DISCOUNT,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{couponid},
+			#{gubun},
+			#{title},
+			#{sdate},
+			#{edate},
+			#{expire},
+			#{target},
+			#{discountType},
+			#{discount},
+			#{minPrice},
+			#{maxDiscount},
+			#{status},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+	
+	<update id="update" parameterType="Coupon">
+		UPDATE T_COUPON
+		   SET GUBUN			= #{gubun},
+		   	   TITLE			= #{title},
+			   SDATE 			= #{sdate},
+			   EDATE 			= #{edate},
+			   EXPIRE 			= #{expire},
+			   TARGET 			= #{target},
+			   TARGET 			= #{target},
+			   DISCOUNT_TYPE	= #{discountType},
+			   DISCOUNT			= #{discount},
+			   MIN_PRICE		= #{minPrice},
+			   MAX_DISCOUNT		= #{maxDiscount},
+			   STATUS			= #{status},
+			   UUSER 			= #{cuser},
+			   UDATE 			= NOW()
+		 WHERE COUPONID			= #{couponid}
+	</update>
+	
+	<select id="gradeList" parameterType="java.lang.String" resultType="CouponGrade">
+		<![CDATA[
+		SELECT A.GRADE_NO,
+			   A.NAME GRADE_NAME,
+			   B.COUPONID
+		  FROM T_MEM_GRADE A
+		  	   LEFT OUTER JOIN T_COUPON_GRADE B 
+		  	   	ON A.GRADE_NO = B.GRADE_NO
+		  	   		AND B.COUPONID = #{couponid}  
+		 WHERE A.STATUS <> 'D'
+		]]>
+	</select>
+	
+	<delete id="deleteGrade" parameterType="java.lang.String">
+		DELETE FROM T_COUPON_GRADE
+		 WHERE COUPONID = #{couponid}
+	</delete>
+	
+	<insert id="insertGrade" parameterType="CouponGrade">
+		INSERT INTO T_COUPON_GRADE (
+			COUPONID,
+			GRADE_NO
+		) VALUES (
+			#{couponid},
+			#{gradeNo}
+		)
+	</insert>
+	
+	<select id="memList" parameterType="java.lang.String" resultType="CouponMem">
+		SELECT A.COUPONID,
+			   A.MEM_NO,
+			   B.MEM_ID
+		  FROM T_COUPON_MEM A
+		  	   INNER JOIN T_MEMBER B
+		  	   	ON A.MEM_NO = B.MEM_NO 
+		 WHERE A.COUPONID = #{couponid} 
+	</select>
+	
+	<delete id="deleteMem" parameterType="java.lang.String">
+		DELETE FROM T_COUPON_MEM
+		 WHERE COUPONID = #{couponid}
+	</delete>
+	
+	<insert id="insertMem" parameterType="CouponMem">
+		INSERT INTO T_COUPON_MEM (
+			COUPONID,
+			MEM_NO
+		) VALUES (
+			#{couponid},
+			(SELECT MEM_NO FROM T_MEMBER WHERE MEM_ID = #{memId})
+		)
+	</insert>
+	
+	<select id="productList" parameterType="java.lang.String" resultType="Product">
+		SELECT A.PNO,
+			   B.MATNR,
+			   B.PNAME,
+			   B.SALE_PRICE
+		  FROM T_COUPON_PRODUCT A
+		  		INNER JOIN T_PRODUCT B
+		  			ON A.PNO = B.PNO
+		 WHERE A.COUPONID = #{couponid}
+	</select>
+	
+	<delete id="deleteProduct" parameterType="java.lang.String">
+		DELETE FROM T_COUPON_PRODUCT
+		 WHERE COUPONID = #{couponid}
+	</delete>
+
+	<insert id="insertProduct" parameterType="CouponProduct">
+		INSERT INTO T_COUPON_PRODUCT(
+			COUPONID,
+			PNO
+		) VALUES (
+			#{couponid},
+			#{pno}
+		)
+	</insert>
+	
+	<insert id="insertSerial" parameterType="CouponSerial" useGeneratedKeys="true" keyProperty="seq" keyColumn="SEQ">
+		INSERT INTO T_COUPON_SERIAL (
+			COUPONID
+		) VALUES (
+			#{couponid}
+		)
+	</insert>
+	
+	<update id="updateSerial" parameterType="CouponSerial">
+		UPDATE T_COUPON_SERIAL
+		   SET SEQ64		= #{seq64},
+		   	   SERIAL		= #{serial},
+		   	   CUSER		= #{cuser},
+		   	   CDATE		= NOW()
+		 WHERE SEQ			= #{seq}
+	</update>
+	
+	<select id="serialList" parameterType="CouponSerialSearch" resultType="CouponSerial">
+		SELECT SERIAL,
+			   CDATE
+	 	  FROM T_COUPON_SERIAL
+	 	 WHERE COUPONID = #{couponid}
+	 	ORDER BY SEQ DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+	
+	<select id="serialCount" parameterType="CouponSerialSearch" resultType="java.lang.Integer">
+		SELECT COUNT(*)
+	 	  FROM T_COUPON_SERIAL
+	 	 WHERE COUPONID = #{couponid}
+	</select>
+
+	<update id="refund" parameterType="java.lang.String">
+		UPDATE T_MCOUPON
+		   SET USE_DATE		= NULL
+		 WHERE MCOUPONID	= #{mcouponid}
+	</update>
+
+	<select id="logList" parameterType="CouponSearch" resultType="Coupon">
+		SELECT A.MCOUPONID,
+			   A.MEM_NO,
+               A.CDATE,
+               A.USE_DATE,
+               B.GUBUN,
+               B.TITLE,
+               B.DISCOUNT_TYPE,
+               B.DISCOUNT,
+               B.EXPIRE,
+			   C.MEM_ID,
+			   C.NAME MEM_NAME,
+			   D.NAME GRADE_NAME,
+               CASE WHEN B.GUBUN = 1 THEN
+						(SELECT MAX(ORDERID) FROM T_ORDER_ITEM WHERE MCOUPONID = A.MCOUPONID)
+					ELSE
+						(SELECT MAX(ORDERID) FROM T_ORDER WHERE SHIP_MCOUPONID = A.MCOUPONID)
+               END ORDERID
+		  FROM T_MCOUPON A
+		  		INNER JOIN T_COUPON B
+		  			ON A.COUPONID = B.COUPONID
+		  		INNER JOIN T_MEMBER C
+		  			ON A.MEM_NO = C.MEM_NO
+		  		INNER JOIN T_MEM_GRADE D
+		  			ON C.GRADE_NO = D.GRADE_NO
+		 WHERE 1 = 1
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gubun)">
+		   AND B.GUBUN = #{gubun}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(sdate)">
+		<![CDATA[
+		   AND A.CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		]]> 
+		</if>		
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(edate)">
+		<![CDATA[
+		   AND A.CDATE <= STR_TO_DATE(CONCAT(#{edate}, ' 23:59:59'), '%Y.%m.%d %H:%i:%s')
+		]]> 
+		</if>		
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND B.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memId)">
+		   AND C.MEM_ID LIKE CONCAT('%', #{memId}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memNo)">
+		   AND A.MEM_NO = #{memNo}
+		</if>
+		ORDER BY MCOUPONID DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="logCount" parameterType="CouponSearch" resultType="java.lang.Integer">
+		SELECT COUNT(*)
+		  FROM T_MCOUPON A
+		  		INNER JOIN T_COUPON B
+		  			ON A.COUPONID = B.COUPONID
+		  		INNER JOIN T_MEMBER C
+		  			ON A.MEM_NO = C.MEM_NO
+		 WHERE 1 = 1
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gubun)">
+		   AND B.GUBUN = #{gubun}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(sdate)">
+		<![CDATA[
+		   AND A.CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		]]> 
+		</if>		
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(edate)">
+		<![CDATA[
+		   AND A.CDATE <= STR_TO_DATE(CONCAT(#{edate}, ' 23:59:59'), '%Y.%m.%d %H:%i:%s')
+		]]> 
+		</if>		
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND B.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memId)">
+		   AND C.MEM_ID LIKE CONCAT('%', #{memId}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memNo)">
+		   AND A.MEM_NO = #{memNo}
+		</if>
+	</select>
+
+</mapper>

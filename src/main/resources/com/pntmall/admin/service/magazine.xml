@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Magazine">
+	<select id="list" parameterType="MagazineSearch" resultType="Magazine">
+		<![CDATA[
+		SELECT A.MNO,
+			   A.GUBUN,
+			   A.TITLE,
+			   A.SUB_TITLE,
+			   A.TAG,
+			   A.THUMB,
+			   A.YOUTUBE,
+			   A.CONTENT,
+			   A.ATTACH,
+			   A.RANK,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_MAGAZINE A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gubun)">
+		   AND A.GUBUN = #{gubun}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromCdate)">
+		   AND A.CDATE >= #{fromCdate}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toCdate)">
+		<![CDATA[
+		   AND A.CDATE < DATE_ADD(#{toCdate}, INTERVAL 1 DAY)
+	    ]]>
+		</if>
+		ORDER BY A.MNO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="MagazineSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_MAGAZINE A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gubun)">
+		   AND A.GUBUN = #{gubun}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromCdate)">
+		   AND A.CDATE >= #{fromCdate}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toCdate)">
+		<![CDATA[
+		   AND A.CDATE < DATE_ADD(#{toCdate}, INTERVAL 1 DAY)
+	    ]]>
+		</if>
+	</select>
+
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Magazine">
+		SELECT A.MNO,
+			   A.GUBUN,
+			   A.TITLE,
+			   A.SUB_TITLE,
+			   A.TAG,
+			   A.THUMB,
+			   A.YOUTUBE,
+			   A.CONTENT,
+			   A.ATTACH,
+			   A.ATTACH_ORG_NAME,
+			   A.RANK,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_MAGAZINE A
+		 WHERE MNO = #{mno}
+	</select>
+
+	<select id="productList" parameterType="java.lang.Integer" resultType="MagazineProduct">
+		<![CDATA[
+		SELECT A.MNO,
+			   A.PNO,
+			   A.RANK,
+			   B.PNAME,
+			   B.MATNR,
+			   B.SALE_PRICE
+		  FROM T_MAGAZINE_PRODUCT A
+		  	   INNER JOIN T_PRODUCT B
+		  	   	ON A.PNO = B.PNO
+		 WHERE A.MNO = #{mno}
+	   	]]>
+	</select>
+
+	<insert id="insert" parameterType="Magazine" useGeneratedKeys="true" keyProperty="mno" keyColumn="MNO">
+		INSERT
+		  INTO T_MAGAZINE (
+			   MNO,
+			   GUBUN,
+			   TITLE,
+			   SUB_TITLE,
+			   TAG,
+			   THUMB,
+			   YOUTUBE,
+			   CONTENT,
+			   ATTACH,
+			   ATTACH_ORG_NAME,
+			   RANK,
+			   STATUS,
+			   CUSER,
+			   CDATE,
+			   UUSER,
+			   UDATE
+		) VALUES (
+			   #{mno},
+			   #{gubun},
+			   #{title},
+			   #{subTitle},
+			   #{tag},
+			   #{thumb},
+			   #{youtube},
+			   #{content},
+			   #{attach},
+			   #{attachOrgName},
+			   #{rank},
+			   #{status},
+			   #{cuser},
+			   NOW(),
+			   #{cuser},
+			   NOW()
+		)
+	</insert>
+
+	<update id="update" parameterType="Magazine">
+		UPDATE T_MAGAZINE
+		   SET GUBUN		= #{gubun},
+			   TITLE        = #{title},
+			   SUB_TITLE    = #{subTitle},
+			   TAG          = #{tag},
+			   THUMB        = #{thumb},
+			   YOUTUBE      = #{youtube},
+			   CONTENT      = #{content},
+			   ATTACH       = #{attach},
+			   ATTACH_ORG_NAME = #{attachOrgName},
+			   RANK     	= #{rank},
+			   STATUS     	= #{status},
+			   UUSER	  	= #{cuser},
+			   UDATE 	  	= NOW()
+		 WHERE MNO 	  		= #{mno}
+	</update>
+
+	<insert id="insertProduct" parameterType="SetProduct">
+		INSERT
+		  INTO T_MAGAZINE_PRODUCT (
+			   MNO,
+			   PNO,
+			   RANK
+		) VALUES (
+			   #{mno},
+			   #{pno},
+			   #{rank}
+		)
+	</insert>
+
+	<delete id="deleteProduct" parameterType="java.lang.Integer">
+		DELETE FROM T_MAGAZINE_PRODUCT
+		 WHERE MNO = #{mno}
+	</delete>
+
+</mapper>

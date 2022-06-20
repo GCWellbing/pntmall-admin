@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="StatClinic">
+
+	<select id="visitList" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m%d'),'%Y-%m-%d') YMD,
+		       DAY_CNT,
+		       PC_CNT,
+		       MO_CNT,
+		       APP_CNT
+		  FROM T_STAT_DAY_VISIT_CLINIC
+		 WHERE YMD >= replace(#{sdate},'.','')
+		   AND YMD <= replace(#{edate},'.','')
+		 ORDER BY YMD
+		]]>
+	</select>
+
+	<select id="visitMonthList" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m'),'%Y-%m') YMD,
+		       SUM(DAY_CNT) DAY_CNT,
+		       SUM(PC_CNT) PC_CNT,
+		       SUM(MO_CNT) MO_CNT,
+		       SUM(APP_CNT) APP_CNT
+		  FROM T_STAT_DAY_VISIT_CLINIC
+		 WHERE YMD >= replace(#{sdate},'.','')
+		   AND YMD <= replace(#{edate},'.','')
+		 GROUP BY DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m'),'%Y-%m')
+		 ORDER BY YMD
+		]]>
+	</select>
+
+	<select id="clinicVisitList" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m%d'),'%Y-%m-%d') YMD,
+		       CLINIC_CNT
+		  FROM T_STAT_DAY_VISIT_CLINIC
+		 WHERE YMD >= replace(#{sdate},'.','')
+		   AND YMD <= replace(#{edate},'.','')
+		 ORDER BY YMD
+		]]>
+	</select>
+
+	<select id="clinicVisitMonthList" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m'),'%Y-%m') YMD,
+		       SUM(CLINIC_CNT) CLINIC_CNT
+		  FROM T_STAT_DAY_VISIT_CLINIC
+		 WHERE YMD >= replace(#{sdate},'.','')
+		   AND YMD <= replace(#{edate},'.','')
+		 GROUP BY DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m'),'%Y-%m')
+		 ORDER BY YMD
+		]]>
+	</select>
+
+	<select id="newTotal" parameterType="Param" resultType="Param">
+		<![CDATA[
+			SELECT TOTAL_BEFORE
+			     , AA.TOTAL_CNT
+			     , AA.MIN_CNT
+			     , AA.MAX_CNT
+				 , (SELECT GROUP_CONCAT(DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m%d'),'%Y-%m-%d') SEPARATOR '<BR>')
+					          FROM T_STAT_DAY_CLINIC
+					 WHERE YMD >= REPLACE(#{sdate},'.','')
+					   AND YMD <= REPLACE(#{edate},'.','')
+					         AND DAY_CNT = AA.MAX_CNT) MAX_DAY
+			     , SUM_NOT_APPR_CNT
+			     , SUM_APPR_CNT
+			     , SUM_UPDATE_REQ_CNT
+			     , SUM_UPDATE_RTN_CNT
+			     , SUM_INACTIVE_CNT
+			     , SUM_SECEDE_CNT
+			FROM (SELECT (SELECT SUM(DAY_CNT)-SUM(SECEDE_CNT) FROM T_STAT_DAY_CLINIC WHERE YMD < REPLACE(#{sdate},'.','') ) TOTAL_BEFORE
+			           , SUM(DAY_CNT) TOTAL_CNT
+				       , MIN(DAY_CNT) MIN_CNT
+				       , MAX(DAY_CNT) MAX_CNT
+				       , SUM(NOT_APPR_CNT) SUM_NOT_APPR_CNT
+				       , SUM(APPR_CNT) SUM_APPR_CNT
+				       , SUM(UPDATE_REQ_CNT) SUM_UPDATE_REQ_CNT
+				       , SUM(UPDATE_RTN_CNT) SUM_UPDATE_RTN_CNT
+				       , SUM(INACTIVE_CNT) SUM_INACTIVE_CNT
+				       , SUM(SECEDE_CNT) SUM_SECEDE_CNT
+				    FROM T_STAT_DAY_CLINIC
+				   WHERE YMD >= replace(#{sdate},'.','')
+  				     AND YMD <= replace(#{edate},'.','') ) AA
+		]]>
+	</select>
+
+	<select id="newList" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m%d'),'%Y-%m-%d') YMD
+		     , DAY_CNT
+		     , NOT_APPR_CNT
+		     , APPR_CNT
+		     , UPDATE_REQ_CNT
+		     , UPDATE_RTN_CNT
+		     , INACTIVE_CNT
+		     , SECEDE_CNT
+		  FROM T_STAT_DAY_CLINIC
+		 WHERE YMD >= replace(#{sdate},'.','')
+		   AND YMD <= replace(#{edate},'.','')
+		 ORDER BY YMD
+		]]>
+	</select>
+
+	<select id="newMonthTotal" parameterType="Param" resultType="Param">
+		<![CDATA[
+			SELECT (SELECT SUM(DAY_CNT)-SUM(SECEDE_CNT) FROM T_STAT_DAY_CLINIC WHERE YMD < REPLACE(#{sdate},'.','') ) TOTAL_BEFORE
+			     , AA.TOTAL_CNT
+			     , AA.MIN_CNT
+			     , AA.MAX_CNT
+				 , (SELECT GROUP_CONCAT(YM SEPARATOR '<BR>')
+			          FROM (SELECT DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m'),'%Y-%m') YM
+                                 , SUM(A.DAY_CNT) TOTAL_CNT
+							  FROM T_STAT_DAY_CLINIC A
+						     WHERE A.YMD >= replace(#{sdate},'.','')
+							   AND A.YMD <= replace(#{edate},'.','')
+							 GROUP BY DATE_FORMAT(STR_TO_DATE(A.YMD, '%Y%m'),'%Y-%m')) BB
+					 WHERE BB.TOTAL_CNT = AA.MAX_CNT) MAX_DAY
+			     , SUM_NOT_APPR_CNT
+			     , SUM_APPR_CNT
+			     , SUM_UPDATE_REQ_CNT
+			     , SUM_UPDATE_RTN_CNT
+			     , SUM_INACTIVE_CNT
+			     , SUM_SECEDE_CNT
+			FROM (SELECT SUM(B.TOTAL_CNT) TOTAL_CNT
+				       , MIN(B.TOTAL_CNT) MIN_CNT
+				       , MAX(B.TOTAL_CNT) MAX_CNT
+				       , SUM(B.SUM_NOT_APPR_CNT) SUM_NOT_APPR_CNT
+				       , SUM(B.SUM_APPR_CNT) SUM_APPR_CNT
+				       , SUM(B.SUM_UPDATE_REQ_CNT) SUM_UPDATE_REQ_CNT
+				       , SUM(B.SUM_UPDATE_RTN_CNT) SUM_UPDATE_RTN_CNT
+				       , SUM(B.SUM_INACTIVE_CNT) SUM_INACTIVE_CNT
+				       , SUM(B.SUM_SECEDE_CNT) SUM_SECEDE_CNT
+				    FROM (SELECT SUM(A.DAY_CNT) TOTAL_CNT
+						       , SUM(A.NOT_APPR_CNT) SUM_NOT_APPR_CNT
+						       , SUM(A.APPR_CNT) SUM_APPR_CNT
+						       , SUM(A.UPDATE_REQ_CNT) SUM_UPDATE_REQ_CNT
+						       , SUM(A.UPDATE_RTN_CNT) SUM_UPDATE_RTN_CNT
+						       , SUM(A.INACTIVE_CNT) SUM_INACTIVE_CNT
+						       , SUM(A.SECEDE_CNT) SUM_SECEDE_CNT
+							FROM T_STAT_DAY_CLINIC A
+						   WHERE A.YMD >= replace(#{sdate},'.','')
+		  				     AND A.YMD <= replace(#{edate},'.','')
+		                   GROUP BY DATE_FORMAT(STR_TO_DATE(A.YMD, '%Y%m'),'%Y-%m')) B ) AA
+		]]>
+	</select>
+
+	<select id="newMonthList" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m'),'%Y-%m') YMD
+		     , SUM(DAY_CNT) DAY_CNT
+		     , SUM(NOT_APPR_CNT) NOT_APPR_CNT
+		     , SUM(APPR_CNT) APPR_CNT
+		     , SUM(UPDATE_REQ_CNT) UPDATE_REQ_CNT
+		     , SUM(UPDATE_RTN_CNT) UPDATE_RTN_CNT
+		     , SUM(INACTIVE_CNT) INACTIVE_CNT
+		     , SUM(SECEDE_CNT) SECEDE_CNT
+		  FROM T_STAT_DAY_CLINIC
+		 WHERE YMD >= replace(#{sdate},'.','')
+		   AND YMD <= replace(#{edate},'.','')
+		 GROUP BY DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m'),'%Y-%m')
+		 ORDER BY YMD
+		]]>
+	</select>
+
+
+</mapper>

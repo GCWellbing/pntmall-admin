@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="HealthExcludeProduct">
+
+    <select id="list" resultType="HealthExcludeProduct">
+		<![CDATA[
+        SELECT A.GUBUN,
+               A.PNO,
+               A.CUSER,
+               A.CDATE,
+               A.UUSER,
+               A.UDATE,
+               B.PNAME
+        FROM t_health_exclude_product A
+                 INNER JOIN T_PRODUCT B
+                            ON A.pno = b.pno
+        WHERE B.STATUS = 'S'
+          AND B.PTYPE = 1
+        ORDER BY A.GUBUN, A.PNO
+        ]]>
+	</select>
+
+    <insert id="insert" parameterType="HealthExcludeProduct">
+        INSERT INTO t_health_exclude_product (GUBUN,
+                                              PNO,
+                                              CUSER,
+                                              CDATE,
+                                              UUSER,
+                                              UDATE)
+        VALUES (#{gubun},
+                #{pno},
+                #{cuser},
+                NOW(),
+                #{cuser},
+                NOW())
+    </insert>
+
+    <update id="delete" parameterType="java.lang.Integer">
+        DELETE
+        FROM t_health_exclude_product
+    </update>
+
+</mapper>

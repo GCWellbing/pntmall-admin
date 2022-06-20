@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Secession">
+	<select id="list" parameterType="MemberSearch" resultType="Member">
+		<![CDATA[
+		SELECT A.MEM_NO,
+			   A.MEM_ID,
+			   A.CLINIC_YN,
+			   A.SECEDE_RSN,
+			   A.UDATE,
+			   A.UUSER,
+   			   CASE WHEN A.UUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.UUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_ID,
+			   CASE WHEN A.UUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.UUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_NAME
+		  FROM T_MEMBER A
+		  	   LEFT OUTER JOIN T_CLINIC B
+		  	      ON A.MEM_NO = B.MEM_NO
+		 WHERE A.STATUS = 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicYn)">
+		   AND A.CLINIC_YN = #{clinicYn}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memId)">
+		   AND A.MEM_ID LIKE CONCAT('%', #{memId}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromUdate)">
+		   AND A.UDATE >= #{fromUdate}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toUdate)">
+		<![CDATA[
+		   AND A.UDATE < DATE_ADD(#{toUdate}, INTERVAL 1 DAY)
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(seceType)">
+			<if test='@com.pntmall.common.mybatis.Check@equals(seceType, "owener")'>
+		   		AND A.SECEDE_RSN NOT IN ('020008')
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(seceType, "manager")'>
+		   		AND A.SECEDE_RSN = '020008'
+			</if>
+		</if>
+		ORDER BY A.UDATE DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="MemberSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_MEMBER A
+		  	   LEFT OUTER JOIN T_CLINIC B
+		  	      ON A.MEM_NO = B.MEM_NO
+		 WHERE A.STATUS = 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicYn)">
+		   AND A.CLINIC_YN = #{clinicYn}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memId)">
+		   AND A.MEM_ID LIKE CONCAT('%', #{memId}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromUdate)">
+		   AND A.UDATE >= #{fromUdate}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toUdate)">
+		<![CDATA[
+		   AND A.UDATE < DATE_ADD(#{toUdate}, INTERVAL 1 DAY)
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(seceType)">
+			<if test='@com.pntmall.common.mybatis.Check@equals(seceType, "owener")'>
+		   		AND A.SECEDE_RSN NOT IN ('020008')
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(seceType, "manager")'>
+		   		AND A.SECEDE_RSN = '020008'
+			</if>
+		</if>
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Member">
+		SELECT A.MEM_NO,
+			   A.MEM_ID,
+			   A.CLINIC_YN,
+			   A.STATUS,
+			   A.CDATE,
+			   A.UDATE,
+			   A.MEMO,
+			   A.SECEDE_RSN,
+			   A.SECEDE_MEMO,
+			   B.MEM_ID CLINIC_ID,
+			   A.UUSER,
+   			   CASE WHEN A.UUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.UUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_ID,
+			   CASE WHEN A.UUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.UUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_NAME
+		  FROM T_MEMBER A
+		  	   LEFT OUTER JOIN T_MEMBER B
+		  	     ON A.MY_CLINIC_MEM_NO = B.MEM_NO
+		 WHERE A.MEM_NO = #{memNo}
+	</select>
+
+	<select id="secedeRsnName" parameterType="java.util.ArrayList" resultType="String">
+    	SELECT GROUP_CONCAT(NAME SEPARATOR ', ')  FROM T_CODE C1 WHERE CONCAT(C1.CODE1, C1.CODE2) IN
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+	        #{item}
+	  	</foreach>
+	</select>
+
+	<update id="deleteMember" parameterType="Member">
+		UPDATE T_MEMBER
+		   SET STATUS = 'E',
+			   MEM_ID = HEX(AES_ENCRYPT(MEM_ID,'MEM_ID')),
+		   	   UUSER = #{uuser}
+		 WHERE MEM_NO = #{memNo}
+	</update>
+
+	<update id="deleteClinic" parameterType="Member">
+		DELETE
+		  FROM T_CLINIC
+		 WHERE MEM_NO	    = #{memNo}
+	</update>
+
+</mapper>

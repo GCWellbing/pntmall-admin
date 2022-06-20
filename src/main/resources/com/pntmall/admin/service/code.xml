@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Code">
+	<select id="list1" resultType="Code">
+		<![CDATA[
+		SELECT CODE1,
+			   CODE2,
+			   NAME,
+			   REMARK,
+			   CASE WHEN STATUS = 'S' THEN '활성'
+			   		ELSE '비활성' END AS STATUS_NAME
+		  FROM T_CODE
+		 WHERE CODE2 = '000'
+		   AND STATUS <> 'D'
+		ORDER BY CODE1
+		]]>
+	</select>
+
+	<select id="list2" parameterType="java.lang.String" resultType="Code">
+		<![CDATA[
+		SELECT CODE1,
+			   CODE2,
+			   NAME,
+			   REMARK,
+			   SAP_CODE,
+			   RANK,
+			   CASE WHEN STATUS = 'S' THEN '활성'
+			   		ELSE '비활성' END AS STATUS_NAME
+		  FROM T_CODE
+		 WHERE CODE1 = #{code1}
+		   AND CODE2 <> '000'
+		   AND STATUS <> 'D'
+		ORDER BY RANK
+		]]>
+	</select>
+
+	<select id="info" parameterType="Code" resultType="Code">
+		SELECT CODE1,
+			   CODE2,
+			   NAME,
+			   REMARK,
+			   RANK,
+			   SAP_CODE,
+			   STATUS
+		  FROM T_CODE
+		 WHERE CODE1 = #{code1}
+		   AND CODE2 = #{code2}
+	</select>
+
+	<insert id="insert1" parameterType="Code">
+		INSERT INTO T_CODE (
+			CODE1,
+			CODE2,
+			NAME,
+			REMARK,
+			RANK,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			(SELECT LPAD(IFNULL(MAX(C.CODE1), 0) + 1, 3, '0') FROM T_CODE C),
+			'000',
+			#{name},
+			#{remark},
+			NULL,
+			#{status},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+
+	<insert id="insert2" parameterType="Code">
+		INSERT INTO T_CODE (
+			CODE1,
+			CODE2,
+			NAME,
+			REMARK,
+			SAP_CODE,
+			RANK,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{code1},
+			(SELECT LPAD(IFNULL(MAX(C.CODE2), 0) + 1, 3, '0') FROM T_CODE C WHERE C.CODE1 = #{code1}),
+			#{name},
+			#{remark},
+			#{sapCode},
+			#{rank},
+			#{status},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+
+	<update id="update" parameterType="Code">
+		UPDATE T_CODE
+		   SET NAME			= #{name},
+		   	   REMARK		= #{remark},
+		   	   RANK			= #{rank},
+		   	   STATUS		= #{status},
+		   	   SAP_CODE		= #{sapCode},
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE CODE1		= #{code1}
+		   AND CODE2		= #{code2}
+	</update>
+
+	<update id="updateRank" parameterType="Code">
+		UPDATE T_CODE
+		   SET RANK			= #{rank},
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE CODE1		= #{code1}
+		   AND CODE2		= #{code2}
+	</update>
+
+	<update id="delete" parameterType="Code">
+		UPDATE T_CODE
+		   SET STATUS		= 'D',
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE CODE1		= #{code1}
+		   AND CODE2		= #{code2}
+	</update>
+
+	<select id="bankCardList" parameterType="BankCard" resultType="BankCard">
+		SELECT *
+		  FROM T_BANKCARD
+		 WHERE 1 = 1
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gubun)">
+		   AND GUBUN = #{gubun}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(name)">
+		   AND NAME = #{name}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(sapCd)">
+		   AND SAP_CD = #{sapCd}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(tossCd)">
+		   AND TOSS_CD = #{tossCd}
+		</if>
+	</select>
+
+</mapper>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Inactive">
+	<select id="list" parameterType="MemberSearch" resultType="Member">
+		<![CDATA[
+		SELECT STRAIGHT_JOIN A.MEM_NO,
+			   A.MEM_ID,
+			   A.PASSWD,
+			   A.NAME,
+			   A.BIRTHDAY,
+			   A.GENDER,
+			   A.MTEL1,
+			   A.MTEL2,
+			   A.EMAIL,
+			   A.SMS_YN,
+			   A.EMAIL_YN,
+			   A.HEIGHT,
+			   A.WEIGHT,
+			   A.GRADE_NO,
+			   (SELECT C.NAME FROM T_MEM_GRADE C WHERE A.GRADE_NO = C.GRADE_NO) GRADE_NAME,
+			   A.CLINIC_YN,
+			   (SELECT COUNT(*) FROM T_MEMBER_LOG WHERE MEM_NO = A.MEM_NO) LOGIN_CNT,
+   			   (SELECT MAX(CDATE) FROM T_MEMBER_LOG WHERE MEM_NO = A.MEM_NO) LOGIN_DATE,
+			   A.SLEEP_YN,
+			   A.SLEEP_DATE,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CDATE,
+			   A.UDATE,
+			   A.JOIN_DEVICE,
+			   (SELECT CUR_POINT FROM T_POINT WHERE PNO = (SELECT MAX(PNO) FROM T_POINT WHERE MEM_NO = A.MEM_NO GROUP BY MEM_NO))  CUR_POINT,
+			   COALESCE((SELECT SNS_TYPE_FL FROM T_MEMBERSNS WHERE MEM_NO = A.MEM_NO AND SNS_JOIN_FL ='Y'  ),'일반가입') JOIN_TYPE
+		  FROM T_MEMBER A
+		  	   LEFT OUTER JOIN T_CLINIC B
+		  	      ON A.MEM_NO = B.MEM_NO
+		 WHERE A.STATUS = 'S'
+		   AND A.SLEEP_YN = 'Y'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memId)">
+		   AND A.MEM_ID LIKE CONCAT('%', #{memId}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(name)">
+		   AND A.NAME LIKE CONCAT('%', #{name}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromCdate)">
+		   AND A.SLEEP_DATE >= #{fromCdate}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toCdate)">
+		<![CDATA[
+		   AND A.SLEEP_DATE < DATE_ADD(#{toCdate}, INTERVAL 1 DAY)
+	    ]]>
+		</if>
+		ORDER BY A.SLEEP_DATE DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="MemberSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_MEMBER A
+		  	   LEFT OUTER JOIN T_CLINIC B
+		  	      ON A.MEM_NO = B.MEM_NO
+		 WHERE A.STATUS = 'S'
+		   AND A.SLEEP_YN = 'Y'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memId)">
+		   AND A.MEM_ID LIKE CONCAT('%', #{memId}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(name)">
+		   AND A.NAME LIKE CONCAT('%', #{name}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromCdate)">
+		   AND A.SLEEP_DATE >= #{fromCdate}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toCdate)">
+		<![CDATA[
+		   AND A.SLEEP_DATE < DATE_ADD(#{toCdate}, INTERVAL 1 DAY)
+	    ]]>
+		</if>
+	</select>
+
+	<update id="activeMember" parameterType="Member">
+		UPDATE T_MEMBER
+		   SET SLEEP_YN = 'N',
+		   	   SLEEP_INFO_YN = '',
+		   	   SLEEP_DATE = null
+		 WHERE MEM_NO = #{memNo}
+	</update>
+
+	<insert id="insertMemberLog" parameterType="Member">
+		INSERT INTO T_MEMBER_LOG (
+			MEM_NO,
+			IP,
+			SUCCESS_YN,
+			DEVICE,
+			CDATE
+		) VALUES (
+			#{memNo},
+			'0.0.0.0',
+			'Y',
+			'P',
+			now()
+		)
+	</insert>
+
+</mapper>

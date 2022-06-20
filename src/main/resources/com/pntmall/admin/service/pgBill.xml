@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="PgBill">
+	<select id="list" parameterType="PgBillSearch" resultType="PgBill">
+		<![CDATA[
+		SELECT A.*
+		  FROM T_PG_BILL A
+		 WHERE A.ISSUE_DATE >= REPLACE(#{sdate}, '.', '/')
+		   AND A.ISSUE_DATE <= REPLACE(#{edate}, '.', '/')
+		ORDER BY A.SNO DESC
+		LIMIT #{limit} OFFSET #{offset} 
+		]]>
+	</select>
+
+	<select id="count" parameterType="OrderSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_PG_BILL A
+		 WHERE A.ISSUE_DATE >= REPLACE(#{sdate}, '.', '/')
+		   AND A.ISSUE_DATE <= REPLACE(#{edate}, '.', '/')
+		]]>
+	</select>
+
+	<insert id="insert" parameterType="PgBill">
+		INSERT INTO T_PG_BILL (
+			ISSUE_DATE,
+			SALE_DATE,
+			SHOP_ID,
+			PAY_TYPE,
+			PAY_STATUS,
+			CODE,
+			PAY_ORGAN,
+			PAY_DATE,
+			ORDERID,
+			AMT,
+			FEE,
+			ISSUE_AMT,
+			AUTH_NO,
+			BUYER,
+			BUYER_ID,
+			REQ_DATE,
+			BIGO,
+			PNAME,
+			DEAL_NO,
+			CUSER,
+			CDATE,
+			SAP_RESULT,
+			SAP_MSG,
+			SAP_DATE
+		) VALUES (
+			#{issueDate},
+			#{saleDate},
+			#{shopId},
+			#{payType},
+			#{payStatus},
+			#{code},
+			#{payOrgan},
+			#{payDate},
+			#{orderid},
+			#{amt},
+			#{fee},
+			#{issueAmt},
+			#{authNo},
+			#{buyer},
+			#{buyerId},
+			#{reqDate},
+			#{bigo},
+			#{pname},
+			#{dealNo},
+			#{cuser},
+			NOW(),
+			#{sapResult},
+			#{sapMsg},
+			#{sapDate}
+		)
+	</insert> 
+
+	<select id="listForSap" resultType="PgBill">
+		<![CDATA[
+		SELECT A.*,
+			   C.BUSINESS_NO,
+			   C.BUSINESS_NO2
+		  FROM T_PG_BILL A
+		  		INNER JOIN T_ORDER B
+		  			ON A.ORDERID = B.ORDERID
+		  		INNER JOIN T_CLINIC C
+		  			ON B.CLINIC_MEM_NO = C.MEM_NO
+		 WHERE A.SNO IN 
+		]]>
+		<foreach item="item" collection="array" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+<!-- 		   AND A.SAP_RESULT IS NULL -->
+	</select>
+
+	<update id="updateSap" parameterType="PgBill">
+		UPDATE T_PG_BILL
+		   SET SAP_RESULT		= #{sapResult},
+		   	   SAP_MSG			= #{sapMsg},
+		   	   SAP_DATE			= NOW()
+		 WHERE SNO				= #{sno}
+	</update>
+	
+	
+</mapper>

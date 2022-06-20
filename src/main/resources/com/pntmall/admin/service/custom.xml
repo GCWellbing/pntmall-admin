@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Custom">
+	<select id="list" parameterType="CustomSearch" resultType="Custom">
+		<![CDATA[
+		SELECT A.CNO,
+			   A.TITLE,
+			   A.RANK,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_CUSTOM A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		ORDER BY A.CNO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="CustomSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_CUSTOM A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+	</select>
+
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Custom">
+		SELECT A.CNO,
+			   A.TITLE,
+			   A.RANK,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_CUSTOM A
+		 WHERE CNO = #{cno}
+	</select>
+
+	<insert id="insert" parameterType="Custom" useGeneratedKeys="true" keyProperty="cno" keyColumn="CNO">
+
+		INSERT
+		  INTO T_CUSTOM (
+		       CNO,
+			   TITLE,
+			   RANK,
+			   STATUS,
+			   CUSER,
+			   CDATE,
+			   UUSER,
+			   UDATE
+		) VALUES (
+			   #{cno},
+			   #{title},
+			   #{rank},
+			   #{status},
+			   #{cuser},
+			   NOW(),
+			   #{cuser},
+			   NOW()
+		)
+	</insert>
+
+	<update id="update" parameterType="Custom">
+		UPDATE T_CUSTOM
+		   SET TITLE      = #{title},
+			   RANK       = #{rank},
+			   STATUS     = #{status},
+			   UUSER	  = #{cuser},
+			   UDATE 	  = NOW()
+		 WHERE CNO 	  	  = #{cno}
+	</update>
+
+	<select id="productList" parameterType="java.lang.Integer" resultType="CustomProduct">
+		<![CDATA[
+		SELECT A.CNO,
+		       A.AGES,
+			   A.PNO,
+			   A.RANK,
+			   B.MATNR,
+			   B.PNAME,
+			   B.SALE_PRICE
+		  FROM T_CUSTOM_PRODUCT A
+		  	   INNER JOIN T_PRODUCT B
+		  	   	ON A.PNO = B.PNO
+		 WHERE A.CNO = #{cno}
+		 ORDER BY A.AGES, A.RANK
+	   	]]>
+	</select>
+
+	<insert id="insertProduct" parameterType="PbannerProduct">
+		INSERT
+		  INTO T_CUSTOM_PRODUCT (
+			   CNO,
+			   AGES,
+			   PNO,
+			   RANK
+		) VALUES (
+			   #{cno},
+			   #{ages},
+			   #{pno},
+			   #{rank}
+		)
+	</insert>
+
+	<delete id="deleteProduct" parameterType="java.lang.Integer">
+		DELETE FROM T_CUSTOM_PRODUCT
+		 WHERE CNO = #{cno}
+	</delete>
+
+</mapper>

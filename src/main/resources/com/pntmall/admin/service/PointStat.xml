@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="PointStat">
+
+	<select id="list" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT ${cdate} CDATE, 
+			   F_TOT_CUR_POINT(DATE(A.CDATE), 1) POINT,
+			   COUNT(IF(A.POINT >= 0, A.PNO, NULL)) CNT1,
+			   SUM(IF(A.POINT >= 0, A.POINT, 0)) SUM1,
+			   COUNT(IF(A.POINT < 0 AND A.REASON <> '019003', A.PNO, NULL)) CNT2,
+			   SUM(IF(A.POINT < 0 AND A.REASON <> '019003', A.POINT, 0)) SUM2,
+			   COUNT(IF(A.REASON = '019003', A.PNO, NULL)) CNT3,
+			   SUM(IF(A.REASON = '019003', A.POINT, 0)) SUM3
+		  FROM T_POINT A
+		]]>
+		<if test='@com.pntmall.common.mybatis.Check@notEquals(gubun, "2")'>
+		<![CDATA[
+		 WHERE CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		   AND CDATE < DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+		]]>
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@equals(gubun, "2")'>
+		<![CDATA[
+		 WHERE CDATE >= STR_TO_DATE(CONCAT(#{sdate}, '.01'), '%Y.%m.%d')
+		   AND CDATE < DATE_ADD(STR_TO_DATE(CONCAT(#{edate}, '.01'), '%Y.%m.%d'), INTERVAL 1 MONTH)
+		]]>
+		</if>
+		GROUP BY ${cdate}
+		ORDER BY ${cdate}
+	</select>
+
+	<select id="curPoint" parameterType="Param" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT SUM(CUR_POINT) 
+		  FROM T_POINT
+		 WHERE PNO IN (SELECT MAX(PNO) FROM T_POINT
+		]]>
+		<if test='@com.pntmall.common.mybatis.Check@notEquals(gubun, "2")'>
+		<![CDATA[
+						WHERE CDATE < DATE_ADD(STR_TO_DATE(#{cdate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+		]]>
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@equals(gubun, "2")'>
+		<![CDATA[
+						WHERE CDATE < DATE_ADD(STR_TO_DATE(CONCAT(#{cdate}, '.01'), '%Y.%m.%d'), INTERVAL 1 MONTH)
+		]]>
+		</if>
+					   GROUP BY MEM_NO)
+	</select>
+	
+	<!-- 	
+	<select id="list" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT ${cdate} CDATE, 
+			   (SELECT SUM(CUR_POINT) FROM T_POINT
+				 WHERE PNO IN (SELECT MAX(PNO) FROM T_POINT
+								WHERE CDATE < DATE_ADD(A.CDATE, INTERVAL 1 DAY)
+				GROUP BY MEM_NO)) POINT,
+			   COUNT(IF(A.POINT >= 0, A.PNO, NULL)) CNT1,
+			   SUM(IF(A.POINT >= 0, A.POINT, 0)) SUM1,
+			   COUNT(IF(A.POINT < 0 AND A.REASON <> '019003', A.PNO, NULL)) CNT2,
+			   SUM(IF(A.POINT < 0 AND A.REASON <> '019003', A.POINT, 0)) SUM2,
+			   COUNT(IF(A.REASON = '019003', A.PNO, NULL)) CNT3,
+			   SUM(IF(A.REASON = '019003', A.POINT, 0)) SUM3
+		  FROM T_POINT A
+		]]>
+		<if test='@com.pntmall.common.mybatis.Check@notEquals(gubun, "2")'>
+		<![CDATA[
+		 WHERE CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		   AND CDATE < DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+		]]>
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@equals(gubun, "2")'>
+		<![CDATA[
+		 WHERE CDATE >= STR_TO_DATE(CONCAT(#{sdate}, '.01'), '%Y.%m.%d')
+		   AND CDATE < DATE_ADD(STR_TO_DATE(CONCAT(#{edate}, '.01'), '%Y.%m.%d'), INTERVAL 1 MONTH)
+		]]>
+		</if>
+		GROUP BY ${cdate}
+		ORDER BY ${cdate}
+	</select>
+	 -->
+	 
+	<!-- 
+	<select id="dailyList" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT DATE_FORMAT(A.CDATE, '%Y.%m.%d') CDATE, 
+			   (SELECT SUM(CUR_POINT) FROM T_POINT
+				 WHERE PNO IN (SELECT MAX(PNO) FROM T_POINT
+								WHERE CDATE < DATE_ADD(A.CDATE, INTERVAL 1 DAY)
+				GROUP BY MEM_NO)) POINT,
+			   COUNT(IF(A.POINT >= 0, A.PNO, NULL)) CNT1,
+			   SUM(IF(A.POINT >= 0, A.POINT, 0)) SUM1,
+			   COUNT(IF(A.POINT < 0 AND A.REASON <> '019003', A.PNO, NULL)) CNT2,
+			   SUM(IF(A.POINT < 0 AND A.REASON <> '019003', A.POINT, 0)) SUM2,
+			   COUNT(IF(A.REASON = '019003', A.PNO, NULL)) CNT3,
+			   SUM(IF(A.REASON = '019003', A.POINT, 0)) SUM3
+		  FROM T_POINT A
+		 WHERE CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		   AND CDATE < DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+		GROUP BY DATE_FORMAT(A.CDATE, '%Y.%m.%d')
+		ORDER BY DATE_FORMAT(A.CDATE, '%Y.%m.%d')
+		]]>
+	</select>
+	
+	<select id="monthlyList" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT SUBSTR(V1.CDATE, 1, 7) CDATE, 
+			   SUM(V1.CNT1) CNT1, 
+			   SUM(V1.SUM1) SUM1, 
+			   SUM(V1.CNT2) CNT2, 
+			   SUM(V1.SUM2) SUM2, 
+			   SUM(V1.CNT3) CNT3, 
+			   SUM(V1.SUM3) SUM3,
+			   (SELECT POINT
+				  FROM (
+						SELECT DATE_FORMAT(A.CDATE, '%Y.%m.%d') CDATE, 
+							   (SELECT SUM(CUR_POINT) FROM T_POINT
+								 WHERE PNO IN (SELECT MAX(PNO) FROM T_POINT
+												WHERE CDATE < DATE_ADD(A.CDATE, INTERVAL 1 DAY)
+			                                   GROUP BY MEM_NO)) POINT
+						  FROM T_POINT A
+						 WHERE CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+						   AND CDATE < DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+						GROUP BY DATE_FORMAT(A.CDATE, '%Y.%m.%d')) V2
+				 WHERE V2.CDATE LIKE CONCAT(SUBSTR(V1.CDATE, 1, 7), '%')
+			    ORDER BY V2.CDATE DESC
+			    LIMIT 1) POINT
+		  FROM (SELECT DATE_FORMAT(A.CDATE, '%Y.%m.%d') CDATE, 
+					   COUNT(IF(A.POINT >= 0, A.PNO, NULL)) CNT1,
+					   SUM(IF(A.POINT >= 0, A.POINT, 0)) SUM1,
+					   COUNT(IF(A.POINT < 0 AND A.REASON <> '019003', A.PNO, NULL)) CNT2,
+					   SUM(IF(A.POINT < 0 AND A.REASON <> '019003', A.POINT, 0)) SUM2,
+					   COUNT(IF(A.REASON = '019003', A.PNO, NULL)) CNT3,
+					   SUM(IF(A.REASON = '019003', A.POINT, 0)) SUM3,
+					   (SELECT SUM(CUR_POINT) FROM T_POINT
+						 WHERE PNO IN (SELECT MAX(PNO) FROM T_POINT
+										WHERE CDATE < DATE_ADD(A.CDATE, INTERVAL 1 DAY)
+	                                   GROUP BY MEM_NO)) POINT
+				  FROM T_POINT A
+				 WHERE CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+				   AND CDATE < DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+				GROUP BY DATE_FORMAT(A.CDATE, '%Y.%m.%d')) V1
+		GROUP BY SUBSTR(V1.CDATE, 1, 7)
+		ORDER BY SUBSTR(V1.CDATE, 1, 7)
+		]]>
+	</select>
+ 	-->
+
+</mapper>

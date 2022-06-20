@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Team">
+	<select id="list" resultType="Team">
+		<![CDATA[
+		SELECT TEAM_NO,
+			   NAME,
+			   CDATE,
+			   CASE WHEN STATUS = 'S' THEN '활성'
+			   		ELSE '비활성' END AS STATUS_NAME
+		  FROM T_TEAM
+		 WHERE STATUS <> 'D'
+		]]>
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Team">
+		SELECT TEAM_NO,
+			   NAME,
+			   UPDATE_AUTH,
+			   REMARK,
+			   STATUS
+		  FROM T_TEAM
+		 WHERE TEAM_NO = #{teamNo}
+	</select>
+
+	<select id="authList" parameterType="java.lang.Integer" resultType="Menu">
+		SELECT A.MENU_NO,
+			   A.PMENU_NO,
+			   A.NAME,
+			   A.URL,
+			   A.RANK
+		  FROM T_MENU A LEFT JOIN T_TEAM_MENU_AUTH B ON A.MENU_NO = B.MENU_NO
+		 WHERE A.STATUS = 'S'
+		   AND B.TEAM_NO = #{teamNo}
+		ORDER BY A.PMENU_NO, A.RANK
+	</select>
+
+	<select id="treeList" parameterType="java.lang.Integer" resultType="Menu">
+		SELECT A.MENU_NO,
+			   A.PMENU_NO,
+			   A.NAME,
+			   A.URL,
+			   A.RANK,
+			   CASE WHEN (SELECT MAX(MENU_NO)
+				  			FROM T_TEAM_MENU_AUTH
+				  		   WHERE MENU_NO = A.MENU_NO 
+				  		     AND TEAM_NO = #{teamNo}) IS NULL THEN 'N' 
+				  	ELSE 'Y' END AUTH_YN
+		  FROM T_MENU A
+		 WHERE A.STATUS = 'S'
+		ORDER BY A.PMENU_NO, A.RANK
+	</select>
+
+	<insert id="insert" parameterType="Team" useGeneratedKeys="true" keyProperty="teamNo" keyColumn="TEAM_NO">
+		INSERT INTO T_TEAM (
+			NAME,
+			UPDATE_AUTH,
+			REMARK,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{name},
+			#{updateAuth},
+			#{remark},
+			#{status},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+	
+	<update id="update" parameterType="Team">
+		UPDATE T_TEAM
+		   SET NAME			= #{name},
+		   	   UPDATE_AUTH	= #{updateAuth},
+		   	   REMARK		= #{remark},
+		   	   STATUS		= #{status},
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE TEAM_NO		= #{teamNo}
+	</update>
+	
+	<insert id="insertMenuAuth" parameterType="TeamMenuAuth">
+		INSERT INTO T_TEAM_MENU_AUTH (
+			TEAM_NO,
+			MENU_NO
+		) VALUES (
+			#{teamNo},
+			#{menuNo}
+		)
+	</insert>
+	
+	<delete id="deleteMenuAuth" parameterType="java.lang.Integer">
+		DELETE FROM T_TEAM_MENU_AUTH
+		 WHERE TEAM_NO = #{teamNo}
+	</delete>
+</mapper>

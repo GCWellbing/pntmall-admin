@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="MemGrade">
+	<select id="list" resultType="MemGrade">
+		<![CDATA[
+		SELECT GRADE_NO,
+			   NAME,
+			   POINT_RATE,
+			   REMARK,
+			   CASE WHEN STATUS = 'S' THEN '활성'
+			   		ELSE '비활성' END AS STATUS_NAME
+		  FROM T_MEM_GRADE
+		 WHERE STATUS <> 'D'
+		ORDER BY GRADE_NO
+		]]>
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="MemGrade">
+		SELECT GRADE_NO,
+			   NAME,
+			   POINT_RATE,
+			   REMARK,
+			   STATUS
+		  FROM T_MEM_GRADE
+		 WHERE GRADE_NO = #{gradeNo}
+	</select>
+	
+	<insert id="insert" parameterType="MemGrade">
+		INSERT INTO T_MEM_GRADE (
+			NAME,
+			POINT_RATE,
+			REMARK,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{name},
+			#{pointRate},
+			#{remark},
+			#{status},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+	
+	<update id="update" parameterType="MemGrade">
+		UPDATE T_MEM_GRADE
+		   SET NAME			= #{name},
+			   POINT_RATE	= #{pointRate},
+			   REMARK		= #{remark},
+			   STATUS		= #{status},
+			   UUSER		= #{cuser},
+			   UDATE		= NOW()
+		 WHERE GRADE_NO		= #{gradeNo}
+	</update>
+	
+</mapper>

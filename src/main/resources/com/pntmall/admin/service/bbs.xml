@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Bbs">
+	<select id="list" parameterType="BbsSearch" resultType="Bbs">
+		<![CDATA[
+		SELECT A.BBS_NO,
+			   A.CATE,
+			   B.NAME CATE_NAME,
+			   A.TITLE,
+			   A.CONTENT,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.FIX_YN,
+			   A.CDATE,
+			   A.UUSER,
+			   CASE WHEN A.UUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.UUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_ID,
+			   CASE WHEN A.UUSER > 2000000000 THEN '마스터'
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_NAME,
+			   A.UDATE
+		  FROM T_BBS A
+		  	   INNER JOIN T_CODE B
+		  	      ON A.CATE = CONCAT(B.CODE1, B.CODE2)
+		 WHERE A.STATUS <> 'D'
+		   AND A.FIX_YN = 'Y'
+		 UNION ALL
+		SELECT A.BBS_NO,
+			   A.CATE,
+			   B.NAME CATE_NAME,
+			   A.TITLE,
+			   A.CONTENT,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.FIX_YN,
+			   A.CDATE,
+			   A.UUSER,
+			   CASE WHEN A.UUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.UUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_ID,
+			   CASE WHEN A.UUSER > 2000000000 THEN '마스터'
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_NAME,
+			   A.UDATE
+		  FROM T_BBS A
+		  	   INNER JOIN T_CODE B
+		  	      ON A.CATE = CONCAT(B.CODE1, B.CODE2)
+		 WHERE A.STATUS <> 'D'
+		   AND A.FIX_YN = 'N'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(cate)">
+		   AND A.CATE = #{cate}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fixYn)">
+		   AND A.FIX_YN = #{fixYn}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromCdate)">
+		   AND A.CDATE >= #{fromCdate}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toCdate)">
+		<![CDATA[
+		   AND A.CDATE < DATE_ADD(#{toCdate}, INTERVAL 1 DAY)
+	    ]]>
+		</if>
+		ORDER BY FIX_YN DESC, BBS_NO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="BbsSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT SUM(CNT)
+		  FROM (
+				SELECT COUNT(*) CNT
+				  FROM T_BBS A
+				 WHERE A.STATUS <> 'D'
+				   AND A.FIX_YN = 'Y'
+			    UNION ALL
+				SELECT COUNT(*) CNT
+				  FROM T_BBS A
+				 WHERE A.STATUS <> 'D'
+				   AND A.FIX_YN = 'N'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(cate)">
+		   AND A.CATE = #{cate}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromCdate)">
+		   AND A.CDATE >= #{fromCdate}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toCdate)">
+		<![CDATA[
+		   AND A.CDATE < DATE_ADD(#{toCdate}, INTERVAL 1 DAY)
+	    ]]>
+		</if>
+		) C
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Bbs">
+		SELECT A.BBS_NO,
+			   A.CATE,
+			   B.NAME CATE_NAME,
+			   A.TITLE,
+			   A.CONTENT,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.FIX_YN,
+			   A.CUSER,
+			   CASE WHEN A.CUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.CUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_ID,
+			   CASE WHEN A.CUSER > 2000000000 THEN '마스터'
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_NAME,
+			   A.CDATE,
+			   A.UUSER,
+			   CASE WHEN A.UUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.UUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_ID,
+			   CASE WHEN A.UUSER > 2000000000 THEN '마스터'
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_NAME,
+			   A.UDATE
+		  FROM T_BBS A
+		  	   INNER JOIN T_CODE B
+		  	      ON A.CATE = CONCAT(B.CODE1, B.CODE2)
+		 WHERE BBS_NO = #{bbsNo}
+	</select>
+
+
+	<insert id="insert" parameterType="Bbs" useGeneratedKeys="true" keyProperty="bbsNo" keyColumn="BBS_NO">
+		INSERT INTO T_BBS (
+			CATE,
+			TITLE,
+			CONTENT,
+			STATUS,
+			FIX_YN,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{cate},
+			#{title},
+			#{content},
+			#{status},
+			#{fixYn},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+
+	<update id="update" parameterType="Bbs">
+		UPDATE T_BBS
+		   SET CATE			= #{cate},
+		       TITLE		= #{title},
+			   CONTENT		= #{content},
+			   STATUS		= #{status},
+			   FIX_YN		= #{fixYn},
+			   UUSER		= #{cuser},
+			   UDATE		= NOW()
+		 WHERE BBS_NO	= #{bbsNo}
+	</update>
+
+	<select id="bbsCommentList" parameterType="java.lang.Integer" resultType="BbsComment">
+		<![CDATA[
+		SELECT A.BBS_NO,
+			   A.COMMENT_NO,
+			   A.COMMENT,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CUSER,
+			   CASE WHEN A.CUSER > 2000000000 THEN '마스터'
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_NAME,
+			   CASE WHEN A.CUSER > 2000000000 THEN 'Master'
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_ID,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_BBS_COMMENT A
+		 WHERE A.BBS_NO = #{bbsNo}
+		   AND A.STATUS <> 'D'
+	   	]]>
+	</select>
+
+	<insert id="insertComment" parameterType="Bbs">
+		INSERT INTO T_BBS_COMMENT (
+			BBS_NO,
+			COMMENT,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{bbsNo},
+			#{comment},
+			#{status},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+
+	<update id="updateComment" parameterType="BbsComment">
+		UPDATE T_BBS_COMMENT
+		   SET COMMENT		= #{comment},
+			   UUSER		= #{cuser},
+			   UDATE		= NOW()
+		 WHERE BBS_NO	= #{bbsNo}
+		   AND COMMENT_NO	= #{commentNo}
+	</update>
+
+	<update id="deleteComment" parameterType="BbsComment">
+		UPDATE T_BBS_COMMENT
+		   SET STATUS		= #{status},
+			   UUSER		= #{cuser},
+			   UDATE		= NOW()
+		 WHERE BBS_NO	= #{bbsNo}
+		   AND COMMENT_NO	= #{commentNo}
+	</update>
+
+	<delete id="deleteBbsImgInfo" parameterType="java.lang.Integer">
+		DELETE FROM T_BBS_IMG
+		 WHERE BBS_NO	= #{noticeNo}
+	</delete>
+
+	<select id="getBbsImgList" parameterType="java.lang.Integer" resultType="BbsImg">
+		<![CDATA[
+		SELECT A.INO,
+			   A.BBS_NO,
+			   A.ATTACH,
+			   A.ATTACH_ORG_NAME
+		  FROM T_BBS_IMG A
+		WHERE A.BBS_NO	= #{bbsNo}
+		ORDER BY A.INO DESC
+		]]>
+	</select>
+
+	<insert id="insertBbsImg" parameterType="BbsImg">
+		INSERT INTO T_BBS_IMG (
+			BBS_NO,
+			ATTACH,
+			ATTACH_ORG_NAME
+		) VALUES (
+			#{bbsNo},
+			#{attach},
+			#{attachOrgName}
+		)
+	</insert>
+
+</mapper>

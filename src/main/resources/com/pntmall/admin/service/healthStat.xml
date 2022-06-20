@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="HealthStat">
+	<select id="healthCheckList" parameterType="Param" resultType="Param">
+		SELECT *
+		FROM (
+				 SELECT
+						<if test="@com.pntmall.common.mybatis.Check@equals(tab,'D')">
+				        	DATE_FORMAT(CDATE, '%Y-%m-%d')						   M,
+						</if>
+						<if test="@com.pntmall.common.mybatis.Check@equals(tab,'M')">
+							DATE_FORMAT(CDATE, '%Y-%m')                             M,
+						</if>
+						'1' AS                                                     GUBUN,
+						COUNT(*)                                                   CNT,
+						SUM((CASE GENDER WHEN 'W' THEN 1 ELSE 0 END))              WOMAN,
+						SUM((CASE GENDER WHEN 'M' THEN 1 ELSE 0 END))              MAN,
+				<![CDATA[
+						SUM((CASE WHEN AGE <= 18 THEN 1 ELSE 0 END))               TEENS,
+						SUM((CASE WHEN AGE >= 19 AND AGE <= 28 THEN 1 ELSE 0 END)) TWENTY,
+						SUM((CASE WHEN AGE >= 29 AND AGE <= 38 THEN 1 ELSE 0 END)) THIRTY,
+						SUM((CASE WHEN AGE >= 39 AND AGE <= 48 THEN 1 ELSE 0 END)) FORTY,
+						SUM((CASE WHEN AGE >= 49 AND AGE <= 58 THEN 1 ELSE 0 END)) FIFTY,
+						SUM((CASE WHEN AGE >= 59 AND AGE <= 68 THEN 1 ELSE 0 END)) SIXTY,
+						SUM((CASE WHEN AGE >= 69 THEN 1 ELSE 0 END))               SEVENTY
+				 FROM T_MY_HEALTH MY
+				 WHERE MY.HEALTH_SEQ > 0
+				   AND HEALTH_SEQ IN
+					   (SELECT HEALTH_SEQ FROM T_MY_HEALTH_TOPIC WHERE HEALTH_SEQ = MY.HEALTH_SEQ AND GUBUN = #{gubun})
+				]]>
+		           <if test="@com.pntmall.common.mybatis.Check@equals(tab,'D')">
+				   AND MY.CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+				   AND MY.CDATE <![CDATA[<]]> DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+				   </if>
+		           <if test="@com.pntmall.common.mybatis.Check@equals(tab,'M')">
+					AND MY.CDATE >= STR_TO_DATE(CONCAT(#{sdate}, '.01'), '%Y.%m.%d')
+					AND MY.CDATE <![CDATA[<]]> DATE_ADD( STR_TO_DATE(CONCAT(#{edate}, '.01'), '%Y.%m.%d'), INTERVAL 1 MONTH)
+				   </if>
+				 GROUP BY M
+				 UNION ALL
+				 SELECT M,
+						'2' AS                                                                        GUBUN,
+						COUNT(*)                                                                      CNT,
+						SUM((CASE GENDER WHEN 'W' THEN 1 ELSE 0 END))                                 WOMAN,
+						SUM((CASE GENDER WHEN 'M' THEN 1 ELSE 0 END))                                 MAN,
+				<![CDATA[
+						SUM((CASE WHEN YEAR(NOW()) - SUBSTR(BIRTHDAY, 1, 4) <= 18 THEN 1 ELSE 0 END)) TEENS,
+						SUM((CASE
+								 WHEN YEAR(NOW()) - SUBSTR(BIRTHDAY, 1, 4) >= 19 AND
+								YEAR(NOW()) - SUBSTR(BIRTHDAY, 1, 4) <= 28 THEN 1
+                         ELSE 0 END))                                                         TWENTY,
+						SUM((CASE
+								 WHEN YEAR(NOW()) - SUBSTR(BIRTHDAY, 1, 4) >= 29 AND
+								YEAR(NOW()) - SUBSTR(BIRTHDAY, 1, 4) <= 38 THEN 1
+                         ELSE 0 END))                                                         THIRTY,
+						SUM((CASE
+								 WHEN YEAR(NOW()) - SUBSTR(BIRTHDAY, 1, 4) >= 39 AND
+								YEAR(NOW()) - SUBSTR(BIRTHDAY, 1, 4) <= 48 THEN 1
+                         ELSE 0 END))                                                         FORTY,
+						SUM((CASE
+								 WHEN YEAR(NOW()) - SUBSTR(BIRTHDAY, 1, 4) >= 49 AND
+								YEAR(NOW()) - SUBSTR(BIRTHDAY, 1, 4) <= 58 THEN 1
+                         ELSE 0 END))                                                         FIFTY,
+						SUM((CASE
+								 WHEN YEAR(NOW()) - SUBSTR(BIRTHDAY, 1, 4) >= 59 AND
+								YEAR(NOW()) - SUBSTR(BIRTHDAY, 1, 4) <= 68 THEN 1
+                         ELSE 0 END))                                                         SIXTY,
+						SUM((CASE WHEN YEAR(NOW()) - SUBSTR(BIRTHDAY, 1, 4) >= 69 THEN 1 ELSE 0 END)) SEVENTY
+				 ]]>
+				 FROM (
+						  SELECT
+								<if test="@com.pntmall.common.mybatis.Check@equals(tab,'D')">
+									DATE_FORMAT(MY.CDATE, '%Y-%m-%d') M,
+								</if>
+								<if test="@com.pntmall.common.mybatis.Check@equals(tab,'M')">
+									DATE_FORMAT(MY.CDATE, '%Y-%m') M,
+								</if>
+						         MEM.MEM_NO, MEM.GENDER, MEM.BIRTHDAY
+						  FROM T_MY_HEALTH MY
+								   INNER JOIN T_MEMBER MEM
+											  ON MY.CUSER = MEM.MEM_NO
+						  WHERE MY.HEALTH_SEQ > 0
+							AND HEALTH_SEQ IN (SELECT HEALTH_SEQ
+											   FROM T_MY_HEALTH_TOPIC
+											   WHERE HEALTH_SEQ = MY.HEALTH_SEQ
+												 AND GUBUN = #{gubun})
+							<if test="@com.pntmall.common.mybatis.Check@equals(tab,'D')">
+								AND MY.CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+								AND MY.CDATE <![CDATA[<]]> DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+							</if>
+							<if test="@com.pntmall.common.mybatis.Check@equals(tab,'M')">
+								AND MY.CDATE >= STR_TO_DATE(CONCAT(#{sdate}, '.01'), '%Y.%m.%d')
+								AND MY.CDATE <![CDATA[<]]> DATE_ADD( STR_TO_DATE(CONCAT(#{edate}, '.01'), '%Y.%m.%d'), INTERVAL 1 MONTH)
+							</if>
+						  GROUP BY M, MEM.MEM_NO, MEM.GENDER, MEM.BIRTHDAY) T
+				 GROUP BY M
+			 ) S
+		ORDER BY M, GUBUN
+	</select>
+
+	<select id="healthTopicList" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT TOPIC.TITLE, S.*
+		FROM T_HEALTH_TOPIC TOPIC
+				 LEFT OUTER JOIN (
+						SELECT HEALTH_NO,
+							   COUNT(*)                                                   CNT,
+							   SUM((CASE GENDER WHEN 'W' THEN 1 ELSE 0 END))              WOMAN,
+							   SUM((CASE GENDER WHEN 'M' THEN 1 ELSE 0 END))              MAN,
+							   SUM((CASE WHEN AGE <= 18 THEN 1 ELSE 0 END))               TEENS,
+							   SUM((CASE WHEN AGE >= 19 AND AGE <= 28 THEN 1 ELSE 0 END)) TWENTY,
+							   SUM((CASE WHEN AGE >= 29 AND AGE <= 38 THEN 1 ELSE 0 END)) THIRTY,
+							   SUM((CASE WHEN AGE >= 39 AND AGE <= 48 THEN 1 ELSE 0 END)) FORTY,
+							   SUM((CASE WHEN AGE >= 49 AND AGE <= 58 THEN 1 ELSE 0 END)) FIFTY,
+							   SUM((CASE WHEN AGE >= 59 AND AGE <= 68 THEN 1 ELSE 0 END)) SIXTY,
+							   SUM((CASE WHEN AGE >= 69 THEN 1 ELSE 0 END))               SEVENTY
+						FROM T_MY_HEALTH MY
+								 INNER JOIN T_MY_HEALTH_TOPIC T
+											ON MY.HEALTH_SEQ = T.HEALTH_SEQ
+						WHERE MY.HEALTH_SEQ > 0
+						  AND T.GUBUN = '1'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@equals(tab,'D')">
+			AND MY.CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+			AND MY.CDATE <![CDATA[<]]> DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@equals(tab,'M')">
+			AND MY.CDATE >= STR_TO_DATE(CONCAT(#{sdate}, '.01'), '%Y.%m.%d')
+			AND MY.CDATE <![CDATA[<]]> DATE_ADD( STR_TO_DATE(CONCAT(#{edate}, '.01'), '%Y.%m.%d'), INTERVAL 1 MONTH)
+		</if>
+						GROUP BY HEALTH_NO) S
+					ON TOPIC.HEALTH_NO = S.HEALTH_NO
+		WHERE TOPIC.STATUS = 'S'
+		AND TOPIC.TYPE = '001'
+		ORDER BY TOPIC.TYPE, TOPIC.RANK
+	</select>
+
+	<select id="healthTopicList2" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT *
+		FROM (
+				 SELECT A.HEALTH_NO,
+						A.TITLE,
+						A.EXAMPLE,
+						A.EXAM_CNT,
+						A.EX_NO,
+						B.CNT,
+						B.WOMAN,
+						B.MAN,
+						B.TEENS,
+						B.TWENTY,
+						B.THIRTY,
+						B.FORTY,
+						B.FIFTY,
+						B.SIXTY,
+						B.SEVENTY
+				 FROM (SELECT 'P'       AS FEMALE_CONDITION,
+							  0         AS HEALTH_NO,
+							  '임신/수유'   AS TITLE,
+							  '임신중입니다.' AS EXAMPLE,
+							  1         AS EX_NO,
+							  2         AS EXAM_CNT
+					   UNION ALL
+					   SELECT 'B'       AS FEMALE_CONDITION,
+							  0         AS HEALTH_NO,
+							  '임신/수유'   AS TITLE,
+							  '수유중입니다.' AS EXAMPLE,
+							  2         AS EX_NO,
+							  2         AS EXAM_CNT) A
+						  LEFT OUTER JOIN (
+					 SELECT FEMALE_CONDITION,
+							COUNT(*)                                                   CNT,
+							SUM((CASE GENDER WHEN 'W' THEN 1 ELSE 0 END))              WOMAN,
+							SUM((CASE GENDER WHEN 'M' THEN 1 ELSE 0 END))              MAN,
+							SUM((CASE WHEN AGE <= 18 THEN 1 ELSE 0 END))               TEENS,
+							SUM((CASE WHEN AGE >= 19 AND AGE <= 28 THEN 1 ELSE 0 END)) TWENTY,
+							SUM((CASE WHEN AGE >= 29 AND AGE <= 38 THEN 1 ELSE 0 END)) THIRTY,
+							SUM((CASE WHEN AGE >= 39 AND AGE <= 48 THEN 1 ELSE 0 END)) FORTY,
+							SUM((CASE WHEN AGE >= 49 AND AGE <= 58 THEN 1 ELSE 0 END)) FIFTY,
+							SUM((CASE WHEN AGE >= 59 AND AGE <= 68 THEN 1 ELSE 0 END)) SIXTY,
+							SUM((CASE WHEN AGE >= 69 THEN 1 ELSE 0 END))               SEVENTY
+					 FROM T_MY_HEALTH MY
+					 WHERE MY.HEALTH_SEQ > 0
+					   AND MY.FEMALE_CONDITION IN ('B', 'P')
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@equals(tab,'D')">
+			AND MY.CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+			AND MY.CDATE <![CDATA[<]]> DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@equals(tab,'M')">
+			AND MY.CDATE >= STR_TO_DATE(CONCAT(#{sdate}, '.01'), '%Y.%m.%d')
+			AND MY.CDATE <![CDATA[<]]> DATE_ADD( STR_TO_DATE(CONCAT(#{edate}, '.01'), '%Y.%m.%d'), INTERVAL 1 MONTH)
+		</if>
+					 GROUP BY FEMALE_CONDITION
+				 ) B
+										  ON A.FEMALE_CONDITION = B.FEMALE_CONDITION
+				 UNION ALL
+		<![CDATA[
+				 SELECT *
+				 FROM (
+						  SELECT TOPIC.HEALTH_NO,
+								 TOPIC.TITLE,
+								 EXAM.EXAMPLE,
+								 (SELECT COUNT(*) FROM T_HEALTH_EXAMPLE WHERE HEALTH_NO = TOPIC.HEALTH_NO) EXAM_CNT,
+								 S.EX_NO,
+								 S.CNT,
+								 S.WOMAN,
+								 S.MAN,
+								 S.TEENS,
+								 S.TWENTY,
+								 S.THIRTY,
+								 S.FORTY,
+								 S.FIFTY,
+								 S.SIXTY,
+								 S.SEVENTY
+						  FROM T_HEALTH_TOPIC TOPIC
+								   INNER JOIN T_HEALTH_EXAMPLE EXAM
+											  ON TOPIC.HEALTH_NO = EXAM.HEALTH_NO
+								   LEFT OUTER JOIN (
+							  SELECT HEALTH_NO,
+									 EX_NO,
+									 COUNT(*)                                                   CNT,
+									 SUM((CASE GENDER WHEN 'W' THEN 1 ELSE 0 END))              WOMAN,
+									 SUM((CASE GENDER WHEN 'M' THEN 1 ELSE 0 END))              MAN,
+									 SUM((CASE WHEN AGE <= 18 THEN 1 ELSE 0 END))               TEENS,
+									 SUM((CASE WHEN AGE >= 19 AND AGE <= 28 THEN 1 ELSE 0 END)) TWENTY,
+									 SUM((CASE WHEN AGE >= 29 AND AGE <= 38 THEN 1 ELSE 0 END)) THIRTY,
+									 SUM((CASE WHEN AGE >= 39 AND AGE <= 48 THEN 1 ELSE 0 END)) FORTY,
+									 SUM((CASE WHEN AGE >= 49 AND AGE <= 58 THEN 1 ELSE 0 END)) FIFTY,
+									 SUM((CASE WHEN AGE >= 59 AND AGE <= 68 THEN 1 ELSE 0 END)) SIXTY,
+									 SUM((CASE WHEN AGE >= 69 THEN 1 ELSE 0 END))               SEVENTY
+							  FROM T_MY_HEALTH MY
+									   INNER JOIN T_MY_HEALTH_ANWSER T
+												  ON MY.HEALTH_SEQ = T.HEALTH_SEQ
+							  WHERE MY.HEALTH_SEQ > 0
+								AND EX_NO > 0
+								AND EX_NO < 99
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@equals(tab,'D')">
+			AND MY.CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+			AND MY.CDATE <![CDATA[<]]> DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@equals(tab,'M')">
+			AND MY.CDATE >= STR_TO_DATE(CONCAT(#{sdate}, '.01'), '%Y.%m.%d')
+			AND MY.CDATE <![CDATA[<]]> DATE_ADD( STR_TO_DATE(CONCAT(#{edate}, '.01'), '%Y.%m.%d'), INTERVAL 1 MONTH)
+		</if>
+
+							  GROUP BY HEALTH_NO, EX_NO) S
+												   ON TOPIC.HEALTH_NO = S.HEALTH_NO
+													   AND EXAM.HEALTH_NO = S.HEALTH_NO
+													   AND EXAM.EX_NO = S.EX_NO
+						  WHERE TOPIC.STATUS = 'S'
+						  ORDER BY TOPIC.TYPE, TOPIC.RANK, EXAM.EX_NO
+					  ) K
+			 ) FK
+
+			</select>
+
+</mapper>

@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="MainVisual">
+	<select id="list" parameterType="MainVisualSearch" resultType="MainVisual">
+		<![CDATA[
+		SELECT A.MV_NO,
+			   A.GUBUN,
+			   A.SDATE,
+			   A.EDATE,
+			   A.TITLE,
+			   A.TAG,
+			   A.PC_IMG,
+			   A.PC_IMG_ALT,
+			   A.MO_IMG,
+			   A.MO_IMG_ALT,
+			   A.URL,
+			   A.RANK,
+			   A.TARGET,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_MAIN_VISUAL A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromDate)">
+		<![CDATA[
+		   AND A.EDATE >= #{fromDate}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toDate)">
+		<![CDATA[
+		   AND A.SDATE <= #{toDate}
+	    ]]>
+		</if>
+		ORDER BY A.MV_NO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="MainVisualSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_MAIN_VISUAL A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromDate)">
+		<![CDATA[
+		   AND A.EDATE >= #{fromDate}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toDate)">
+		<![CDATA[
+		   AND A.SDATE <= #{toDate}
+	    ]]>
+		</if>
+	</select>
+
+
+	<select id="info" parameterType="java.lang.Integer" resultType="MainVisual">
+		SELECT A.MV_NO,
+			   A.GUBUN,
+			   A.SDATE,
+			   A.EDATE,
+			   A.TITLE,
+			   A.TAG,
+			   A.PC_IMG,
+			   A.PC_IMG_ALT,
+			   A.MO_IMG,
+			   A.MO_IMG_ALT,
+			   A.URL,
+			   A.RANK,
+			   A.TARGET,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE,
+		       <include refid="Common.userid">
+		       	<property name="alias" value="A" />
+		       </include> 
+		  FROM T_MAIN_VISUAL A
+		 WHERE MV_NO = #{mvNo}
+	</select>
+
+	<insert id="insert" parameterType="MainVisual">
+		INSERT
+		  INTO T_MAIN_VISUAL (
+			   GUBUN,
+			   SDATE,
+			   EDATE,
+			   TITLE,
+			   TAG,
+			   PC_IMG,
+			   PC_IMG_ALT,
+			   MO_IMG,
+			   MO_IMG_ALT,
+			   URL,
+			   RANK,
+			   TARGET,
+			   STATUS,
+			   CUSER,
+			   CDATE,
+			   UUSER,
+			   UDATE
+		) VALUES (
+			   #{gubun},
+			   #{sdate},
+			   #{edate},
+			   #{title},
+			   #{tag},
+			   #{pcImg},
+			   #{pcImgAlt},
+			   #{moImg},
+			   #{moImgAlt},
+			   #{url},
+			   #{rank},
+			   #{target},
+			   #{status},
+			   #{cuser},
+			   NOW(),
+			   #{cuser},
+			   NOW()
+		)
+	</insert>
+
+	<update id="update" parameterType="MainVisual">
+		UPDATE T_MAIN_VISUAL
+		   SET GUBUN	  = #{gubun},
+			   SDATE	  = #{sdate},
+			   EDATE      = #{edate},
+			   TITLE      = #{title},
+			   TAG        = #{tag},
+			   PC_IMG     = #{pcImg},
+			   PC_IMG_ALT = #{pcImgAlt},
+			   MO_IMG     = #{moImg},
+			   MO_IMG_ALT = #{moImgAlt},
+			   URL        = #{url},
+			   RANK       = #{rank},
+			   TARGET     = #{target},
+			   STATUS     = #{status},
+			   UUSER	  = #{cuser},
+			   UDATE 	  = NOW()
+		 WHERE MV_NO 	  = #{mvNo}
+	</update>
+
+</mapper>

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Nutrition">
+	<select id="list" parameterType="Nutrition" resultType="Nutrition">
+		<![CDATA[
+		SELECT A.NUTRITION_NO,
+			   A.NAME,
+			   A.FUNC,
+			   A.STANDARD,
+			   A.UNIT,
+			   CASE WHEN A.STATUS = 'S' THEN '활성'
+			   		ELSE '비활성' END AS STATUS_NAME,
+			   B.NAME UNIT_NAME
+		  FROM T_NUTRITION A
+		  	   INNER JOIN T_CODE B
+		  	   	ON A.UNIT = CONCAT(B.CODE1, B.CODE2)
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(name)">
+		   AND A.NAME LIKE CONCAT('%', #{name}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		ORDER BY A.NUTRITION_NO DESC
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Nutrition">
+		SELECT NUTRITION_NO,
+			   NAME,
+			   FUNC,
+			   CONTENT,
+			   ICON,
+		       STANDARD,
+		       UNIT,
+		       ARTICLE1,
+		       ARTICLE2,
+		       INTAKE1,
+		       INTAKE2,
+		       INTAKE3,
+		       INTAKE4,
+		       INTAKE5,
+		       INTAKE6,
+		       INTAKE7,
+		       INTAKE8,
+		       INTAKE9,
+		       INTAKE10,
+			   STATUS,
+			   CUSER,
+			   CDATE,
+			   UUSER,
+			   UDATE
+		  FROM T_NUTRITION
+		 WHERE NUTRITION_NO = #{nutritionNo}
+	</select>
+
+	<insert id="insert" parameterType="Nutrition">
+		INSERT INTO T_NUTRITION (
+			NAME,
+			FUNC,
+			CONTENT,
+			ICON,
+		    STANDARD,
+		    UNIT,
+		    ARTICLE1,
+		    ARTICLE2,
+		    INTAKE1,
+		    INTAKE2,
+		    INTAKE3,
+		    INTAKE4,
+		    INTAKE5,
+		    INTAKE6,
+		    INTAKE7,
+		    INTAKE8,
+		    INTAKE9,
+		    INTAKE10,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{name},
+			#{func},
+			#{content},
+			#{icon},
+			#{standard},
+			#{unit},
+			#{article1},
+			#{article2},
+			#{intake1},
+			#{intake2},
+			#{intake3},
+			#{intake4},
+			#{intake5},
+			#{intake6},
+			#{intake7},
+			#{intake8},
+			#{intake9},
+			#{intake10},
+			#{status},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+
+	<update id="update" parameterType="Nutrition">
+		UPDATE T_NUTRITION
+		   SET NAME			= #{name},
+		   	   FUNC			= #{func},
+		   	   CONTENT		= #{content},
+		   	   ICON			= #{icon},
+		   	   STANDARD		= #{standard},
+		   	   UNIT			= #{unit},
+		   	   ARTICLE1		= #{article1},
+		   	   ARTICLE2		= #{article2},
+		   	   INTAKE1		= #{intake1},
+		   	   INTAKE2		= #{intake2},
+		   	   INTAKE3		= #{intake3},
+		   	   INTAKE4		= #{intake4},
+		   	   INTAKE5		= #{intake5},
+		   	   INTAKE6		= #{intake6},
+		   	   INTAKE7		= #{intake7},
+		   	   INTAKE8		= #{intake8},
+		   	   INTAKE9		= #{intake9},
+		   	   INTAKE10		= #{intake10},
+		   	   STATUS		= #{status},
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE NUTRITION_NO	= #{nutritionNo}
+	</update>
+
+	<update id="delete" parameterType="Nutrition">
+		UPDATE T_NUTRITION
+		   SET STATUS		= 'D',
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE NUTRITION_NO	= #{nutritionNo}
+	</update>
+	
+	
+	
+	
+	
+	
+</mapper>

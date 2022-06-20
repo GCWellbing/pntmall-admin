@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Notice">
+	<select id="list" parameterType="NoticeSearch" resultType="Notice">
+		<![CDATA[
+		SELECT A.NOTICE_NO,
+			   A.CATE,
+			   B.NAME CATE_NAME,
+			   A.TITLE,
+			   A.CONTENT,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.FIX_YN,
+			   A.COMMENT_YN,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_NOTICE A
+		  	   INNER JOIN T_CODE B
+		  	      ON A.CATE = CONCAT(B.CODE1, B.CODE2)
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(cate)">
+		   AND A.CATE = #{cate}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fixYn)">
+		   AND A.FIX_YN = #{fixYn}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromCdate)">
+		   AND A.CDATE >= #{fromCdate}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toCdate)">
+		<![CDATA[
+		   AND A.CDATE < DATE_ADD(#{toCdate}, INTERVAL 1 DAY)
+	    ]]>
+		</if>
+		ORDER BY A.FIX_YN DESC, A.NOTICE_NO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="NoticeSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_NOTICE A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(cate)">
+		   AND A.CATE = #{cate}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fixYn)">
+		   AND A.FIX_YN = #{fixYn}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromCdate)">
+		   AND A.CDATE >= #{fromCdate}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toCdate)">
+		<![CDATA[
+		   AND A.CDATE < DATE_ADD(#{toCdate}, INTERVAL 1 DAY)
+	    ]]>
+		</if>
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Notice">
+		SELECT A.NOTICE_NO,
+			   A.CATE,
+			   B.NAME CATE_NAME,
+			   A.TITLE,
+			   A.CONTENT,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.FIX_YN,
+			   A.COMMENT_YN,
+			   A.CDATE,
+			   CASE WHEN A.CUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.CUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_NAME,
+			   CASE WHEN A.CUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.CUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_ID,
+			   A.UUSER,
+			   CASE WHEN A.UUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.UUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_NAME,
+			   CASE WHEN A.UUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.UUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_ID,
+			   A.UDATE
+		  FROM T_NOTICE A
+		  	   INNER JOIN T_CODE B
+		  	      ON A.CATE = CONCAT(B.CODE1, B.CODE2)
+		 WHERE NOTICE_NO = #{noticeNo}
+	</select>
+
+
+	<insert id="insert" parameterType="Notice">
+		INSERT INTO T_NOTICE (
+			CATE,
+			TITLE,
+			CONTENT,
+			STATUS,
+			FIX_YN,
+			COMMENT_YN,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{cate},
+			#{title},
+			#{content},
+			#{status},
+			#{fixYn},
+			#{commentYn},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+
+	<update id="update" parameterType="Notice">
+		UPDATE T_NOTICE
+		   SET CATE			= #{cate},
+		       TITLE		= #{title},
+			   CONTENT		= #{content},
+			   STATUS		= #{status},
+			   FIX_YN		= #{fixYn},
+			   COMMENT_YN	= #{commentYn},
+			   UUSER		= #{cuser},
+			   UDATE		= NOW()
+		 WHERE NOTICE_NO	= #{noticeNo}
+	</update>
+
+	<select id="noticeCommentList" parameterType="java.lang.Integer" resultType="NoticeComment">
+		<![CDATA[
+		SELECT A.NOTICE_NO,
+			   A.COMMENT_NO,
+			   A.COMMENT,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CUSER,
+			   CASE WHEN A.CUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.CUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_ID,
+			   CASE WHEN A.CUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.CUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_NAME,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_NOTICE_COMMENT A
+		 WHERE A.NOTICE_NO = #{noticeNo}
+		   AND A.STATUS <> 'D'
+	   	]]>
+	</select>
+
+	<update id="setStatusNoticeComment" parameterType="NoticeComment">
+		UPDATE T_NOTICE_COMMENT
+		   SET STATUS		= #{status},
+			   UUSER		= #{cuser},
+			   UDATE		= NOW()
+		 WHERE NOTICE_NO	= #{noticeNo}
+		   AND COMMENT_NO	= #{commentNo}
+	</update>
+
+</mapper>

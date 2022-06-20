@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Intake">
+	<select id="list" parameterType="java.lang.String" resultType="Intake">
+		<![CDATA[
+		SELECT INTAKE_NO,
+			   CONTENT,
+			   CASE WHEN STATUS = 'S' THEN '활성'
+			   		ELSE '비활성' END AS STATUS_NAME
+		  FROM T_INTAKE
+		 WHERE STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(content)">
+		   AND CONTENT LIKE CONCAT('%', #{content}, '%')
+		</if>
+		ORDER BY INTAKE_NO DESC
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Intake">
+		SELECT INTAKE_NO,
+			   CONTENT,
+			   STATUS
+		  FROM T_INTAKE
+		 WHERE INTAKE_NO = #{intakeNo}
+	</select>
+
+	<insert id="insert" parameterType="Intake">
+		INSERT INTO T_INTAKE (
+			CONTENT,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{content},
+			#{status},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+	
+	<update id="update" parameterType="Intake">
+		UPDATE T_INTAKE
+		   SET CONTENT		= #{content},
+		   	   STATUS		= #{status},
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE INTAKE_NO	= #{intakeNo}
+	</update>
+
+	<update id="delete" parameterType="Intake">
+		UPDATE T_INTAKE
+		   SET STATUS		= 'D',
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE INTAKE_NO	= #{intakeNo}
+	</update>
+</mapper>

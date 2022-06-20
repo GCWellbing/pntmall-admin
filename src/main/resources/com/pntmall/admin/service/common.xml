@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Common">
+	<sql id="userid" >
+       (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = ${alias}.CUSER) CUSER_ID,
+       (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = ${alias}.UUSER) UUSER_ID
+	</sql>
+
+	<sql id="user" >
+		<![CDATA[
+			CASE WHEN ${cuser} < 0 THEN 'SYSTEM'
+	       		 WHEN ${cuser} > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = ${cuser})
+	       		 ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = ${cuser})
+	       	END CUSER_ID,
+			CASE WHEN ${cuser} < 0 THEN 'SYSTEM'
+	       		 WHEN ${cuser} > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = ${cuser})
+	       		 ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = ${cuser})
+	       	END CUSER_NAME,
+			CASE WHEN ${uuser} < 0 THEN 'SYSTEM'
+	       		 WHEN ${uuser} > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = ${uuser})
+	       		 ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = ${uuser})
+	       	END UUSER_ID,
+			CASE WHEN ${uuser} < 0 THEN 'SYSTEM'
+	       		 WHEN ${uuser} > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = ${uuser})
+	       		 ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = ${uuser})
+	       	END UUSER_NAME
+       	]]>
+	</sql>
+
+	<sql id="cuser" >
+		<![CDATA[
+			CASE WHEN ${cuser} < 0 THEN 'SYSTEM'
+	       		 WHEN ${cuser} > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = ${cuser})
+	       		 ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = ${cuser})
+	       	END CUSER_ID,
+			CASE WHEN ${cuser} < 0 THEN 'SYSTEM'
+	       		 WHEN ${cuser} > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = ${cuser})
+	       		 ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = ${cuser})
+	       	END CUSER_NAME
+       	]]>
+	</sql>
+
+	<sql id="uuser" >
+		<![CDATA[
+			CASE WHEN ${uuser} < 0 THEN 'SYSTEM'
+	       		 WHEN ${uuser} > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = ${uuser})
+	       		 ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = ${uuser})
+	       	END CUSER_ID,
+			CASE WHEN ${uuser} < 0 THEN 'SYSTEM'
+	       		 WHEN ${uuser} > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = ${uuser})
+	       		 ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = ${uuser})
+	       	END CUSER_NAME
+       	]]>
+	</sql>
+
+</mapper>

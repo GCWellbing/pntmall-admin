@@ -1,0 +1,784 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Clinic">
+	<select id="list" parameterType="ClinicSearch" resultType="Clinic">
+		<![CDATA[
+		SELECT STRAIGHT_JOIN A.MEM_NO,
+			   A.MEM_ID,
+			   A.NAME,
+			   B.CLINIC_ID,
+			   B.CLINIC_NAME,
+			   B.ZIP,
+			   B.ADDR1,
+			   B.ADDR2,
+			   B.TEL1,
+			   B.TEL2,
+			   A.MTEL1,
+			   A.MTEL2,
+			   A.EMAIL,
+			   A.EMAIL_YN,
+			   A.SMS_YN,
+			   B.INTRO,
+			   B.SUBJECT,
+			   B.DOCTOR_INTRO,
+			   B.DOCTOR_HISTORY,
+			   B.RESERVATION_YN,
+			   B.DIVISION_YN,
+			   B.PICKUP_YN,
+			   B.KATALK_YN,
+			   B.KATALK_ID,
+			   B.MON_SH,
+			   B.MON_SM,
+			   B.MON_EH,
+			   B.MON_EM,
+			   B.MON_CLOSE,
+			   B.TUE_SH,
+			   B.TUE_SM,
+			   B.TUE_EH,
+			   B.TUE_EM,
+			   B.TUE_CLOSE,
+			   B.WED_SH,
+			   B.WED_SM,
+			   B.WED_EH,
+			   B.WED_EM,
+			   B.WED_CLOSE,
+			   B.THU_SH,
+			   B.THU_SM,
+			   B.THU_EH,
+			   B.THU_EM,
+			   B.THU_CLOSE,
+			   B.FRI_SH,
+			   B.FRI_SM,
+			   B.FRI_EH,
+			   B.FRI_EM,
+			   B.FRI_CLOSE,
+			   B.SAT_SH,
+			   B.SAT_SM,
+			   B.SAT_EH,
+			   B.SAT_EM,
+			   B.SAT_CLOSE,
+			   B.SUN_SH,
+			   B.SUN_SM,
+			   B.SUN_EH,
+			   B.SUN_EM,
+			   B.SUN_CLOSE,
+			   B.HOLIDAY_SH,
+			   B.HOLIDAY_SM,
+			   B.HOLIDAY_EH,
+			   B.HOLIDAY_EM,
+			   B.HOLIDAY_CLOSE,
+			   B.LUNCH_SH,
+			   B.LUNCH_SM,
+			   B.LUNCH_EH,
+			   B.LUNCH_EM,
+			   B.LUNCH_YN,
+			   B.ALARM_TEL1,
+			   B.ALARM_TEL2,
+			   B.ALARM_TYPE,
+			   B.BLOG,
+			   B.YOUTUBE,
+			   B.FACEBOOK,
+			   B.INSTAGRAM,
+			   B.TWITTER,
+			   B.BUSINESS_OWNER,
+			   B.BUSINESS_NO,
+			   B.BUSINESS_NAME,
+			   B.BUSINESS_TYPE,
+			   B.BUSINESS_ITEM,
+			   B.BUSINESS_OWNER2,
+			   B.BUSINESS_NO2,
+			   B.BUSINESS_NAME2,
+			   B.BUSINESS_TYPE2,
+			   B.BUSINESS_ITEM2,
+			   B.MEDICAL_NO,
+			   B.TAX_TYPE,
+			   B.BANK,
+			   (SELECT NAME FROM T_CODE WHERE CONCAT(CODE1,CODE2) = B.BANK) BANK_NAME,
+			   B.DEPOSITOR,
+			   B.DEPOSITOR_NOT,
+			   B.ACCOUNT,
+			   B.DISP_YN,
+			   C.APPROVE,
+			   C.APPROVE_NAME,
+			   C.REASON,
+			   D.APPROVE_CDATE,
+			   A.CDATE,
+			   A.UDATE,
+			   (SELECT MAX(CDATE) FROM T_MEMBER_CLINIC_LOG WHERE MEM_NO = A.MEM_NO) LOGIN_CLINIC_DATE,
+			   B.LATITUDE,
+			   B.LONGITUDE,
+			   B.CLINIC_SELL_CD,
+			   B.CLINIC_BUY_CD
+		  FROM T_MEMBER A
+		  	   JOIN T_CLINIC B
+		  	      ON B.MEM_NO = A.MEM_NO
+		  	   JOIN (SELECT AA.MEM_NO, AA.APPROVE, BB.NAME APPROVE_NAME, AA.REASON, AA.CDATE
+		  	                      FROM T_CLINIC_JOIN AA, T_CODE BB
+		  	                     WHERE AA.APPROVE = CONCAT(BB.CODE1, BB.CODE2)
+		  	                       AND AA.JNO IN (SELECT MAX(JNO) FROM T_CLINIC_JOIN CC GROUP BY CC.MEM_NO)) C
+		  	      ON C.MEM_NO = A.MEM_NO
+		  	   LEFT OUTER JOIN (SELECT MEM_NO, MIN(AA.CDATE) APPROVE_CDATE
+		  	                      FROM T_CLINIC_JOIN AA
+		  	                     WHERE APPROVE = '006002'
+		  	                     GROUP BY MEM_NO) D
+		  	      ON D.MEM_NO = A.MEM_NO
+		 WHERE A.MEM_NO > 0
+		   AND A.STATUS <> 'D'
+		   AND A.CLINIC_YN ='Y'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicId)">
+		   AND A.MEM_ID LIKE CONCAT('%', #{clinicId}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(businessNo)">
+		   AND (B.BUSINESS_NO = #{businessNo} OR B.BUSINESS_NO2 = #{businessNo})
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicName)">
+		   AND (   B.CLINIC_NAME LIKE CONCAT('%', #{clinicName}, '%')
+		        OR B.BUSINESS_NAME LIKE CONCAT('%', #{clinicName}, '%')
+		        OR B.BUSINESS_NAME2 LIKE CONCAT('%', #{clinicName}, '%')  )
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(approveArr)">
+			AND C.APPROVE IN
+			<foreach item="item" index="index" collection="approveArr" open="(" separator="," close=")">
+		        #{item}
+		  	</foreach>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(dispYn)">
+		   AND B.DISP_YN = #{dispYn}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(business2Yn)">
+			<if test='@com.pntmall.common.mybatis.Check@equals(business2Yn, "Y")'>
+		   AND NULLIF(B.BUSINESS_NO2,'') IS NOT NULL
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(business2Yn, "N")'>
+			<![CDATA[
+		   AND NULLIF(B.BUSINESS_NO2,'') IS NULL
+			]]>
+			</if>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromCdateJoin)">
+		   AND D.APPROVE_CDATE >= #{fromCdateJoin}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toCdateJoin)">
+		<![CDATA[
+		   AND D.APPROVE_CDATE < DATE_ADD(#{toCdateJoin}, INTERVAL 1 DAY)
+	    ]]>
+		</if>
+		ORDER BY A.MEM_NO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="ClinicSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT STRAIGHT_JOIN COUNT(*)
+		  FROM T_MEMBER A
+		  	   JOIN T_CLINIC B
+		  	      ON B.MEM_NO = A.MEM_NO
+		  	   JOIN (SELECT AA.MEM_NO, AA.APPROVE, BB.NAME APPROVE_NAME, AA.REASON, AA.CDATE
+		  	                      FROM T_CLINIC_JOIN AA, T_CODE BB
+		  	                     WHERE AA.APPROVE = CONCAT(BB.CODE1, BB.CODE2)
+		  	                       AND AA.JNO IN (SELECT MAX(JNO) FROM T_CLINIC_JOIN CC GROUP BY CC.MEM_NO)) C
+		  	      ON C.MEM_NO = A.MEM_NO
+		  	   LEFT OUTER JOIN (SELECT MEM_NO, MIN(AA.CDATE) APPROVE_CDATE
+		  	                      FROM T_CLINIC_JOIN AA, T_CODE BB
+		  	                     WHERE AA.APPROVE = CONCAT(BB.CODE1, BB.CODE2)
+		  	                       AND APPROVE = '006002'
+		  	                     GROUP BY MEM_NO) D
+		  	      ON D.MEM_NO = A.MEM_NO
+		 WHERE A.MEM_NO > 0
+		   AND A.STATUS <> 'D'
+		   AND A.CLINIC_YN ='Y'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicId)">
+		   AND A.MEM_ID LIKE CONCAT('%', #{clinicId}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(businessNo)">
+		   AND (B.BUSINESS_NO = #{businessNo} OR B.BUSINESS_NO2 = #{businessNo})
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicName)">
+		   AND (   B.CLINIC_NAME LIKE CONCAT('%', #{clinicName}, '%')
+		        OR B.BUSINESS_NAME LIKE CONCAT('%', #{clinicName}, '%')
+		        OR B.BUSINESS_NAME2 LIKE CONCAT('%', #{clinicName}, '%')  )
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(approveArr)">
+			AND C.APPROVE IN
+			<foreach item="item" index="index" collection="approveArr" open="(" separator="," close=")">
+		        #{item}
+		  	</foreach>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(dispYn)">
+		   AND B.DISP_YN = #{dispYn}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(business2Yn)">
+			<if test='@com.pntmall.common.mybatis.Check@equals(business2Yn, "Y")'>
+		   AND NULLIF(B.BUSINESS_NO2,'') IS NOT NULL
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(business2Yn, "N")'>
+			<![CDATA[
+		   AND NULLIF(B.BUSINESS_NO2,'') IS NULL
+			]]>
+			</if>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromCdateJoin)">
+		   AND D.APPROVE_CDATE >= #{fromCdateJoin}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toCdateJoin)">
+		<![CDATA[
+		   AND D.APPROVE_CDATE < DATE_ADD(#{toCdateJoin}, INTERVAL 1 DAY)
+	    ]]>
+		</if>
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Clinic">
+		SELECT A.MEM_NO,
+			   A.MEM_ID,
+			   A.NAME,
+			   A.MTEL1,
+			   A.MTEL2,
+			   A.EMAIL,
+			   A.EMAIL_YN,
+			   A.SMS_YN,
+			   B.CLINIC_ID,
+			   B.CLINIC_NAME,
+			   B.ZIP,
+			   B.ADDR1,
+			   B.ADDR2,
+			   B.TEL1,
+			   B.TEL2,
+			   B.INTRO,
+			   B.SUBJECT,
+			   B.MON_SH,
+			   B.MON_SM,
+			   B.MON_EH,
+			   B.MON_EM,
+			   B.MON_CLOSE,
+			   B.TUE_SH,
+			   B.TUE_SM,
+			   B.TUE_EH,
+			   B.TUE_EM,
+			   B.TUE_CLOSE,
+			   B.WED_SH,
+			   B.WED_SM,
+			   B.WED_EH,
+			   B.WED_EM,
+			   B.WED_CLOSE,
+			   B.THU_SH,
+			   B.THU_SM,
+			   B.THU_EH,
+			   B.THU_EM,
+			   B.THU_CLOSE,
+			   B.FRI_SH,
+			   B.FRI_SM,
+			   B.FRI_EH,
+			   B.FRI_EM,
+			   B.FRI_CLOSE,
+			   B.SAT_SH,
+			   B.SAT_SM,
+			   B.SAT_EH,
+			   B.SAT_EM,
+			   B.SAT_CLOSE,
+			   B.SUN_SH,
+			   B.SUN_SM,
+			   B.SUN_EH,
+			   B.SUN_EM,
+			   B.SUN_CLOSE,
+			   B.HOLIDAY_SH,
+			   B.HOLIDAY_SM,
+			   B.HOLIDAY_EH,
+			   B.HOLIDAY_EM,
+			   B.HOLIDAY_CLOSE,
+			   B.LUNCH_SH,
+			   B.LUNCH_SM,
+			   B.LUNCH_EH,
+			   B.LUNCH_EM,
+			   B.LUNCH_YN,
+			   B.ALARM_TEL1,
+			   B.ALARM_TEL2,
+			   B.ALARM_TYPE,
+			   B.BLOG,
+			   B.YOUTUBE,
+			   B.FACEBOOK,
+			   B.INSTAGRAM,
+			   B.TWITTER,
+			   B.BUSINESS_NO,
+			   B.BUSINESS_NAME,
+			   B.BUSINESS_NO2,
+			   B.BUSINESS_NAME2,
+			   B.MEDICAL_NO,
+			   B.TAX_TYPE,
+			   B.BANK,
+			   B.DEPOSITOR,
+			   B.DEPOSITOR_NOT,
+			   B.ACCOUNT,
+			   B.DISP_YN,
+			   B.LATITUDE,
+			   B.LONGITUDE,
+			   B.DOCTOR_INTRO,
+			   B.DOCTOR_HISTORY,
+			   B.RESERVATION_YN,
+			   B.DIVISION_YN,
+			   B.PICKUP_YN,
+			   B.KATALK_YN,
+			   B.KATALK_ID,
+			   B.CLINIC_SELL_CD,
+			   B.CLINIC_BUY_CD,
+			   B.BUSINESS_OWNER,
+			   B.BUSINESS_ITEM,
+			   B.BUSINESS_TYPE,
+			   B.BUSINESS_OWNER2,
+			   B.BUSINESS_ITEM2,
+			   B.BUSINESS_TYPE2,
+			   B.NOTICE_YN,
+			   B.NOTICE,
+			   C.APPROVE,
+			   C.APPROVE_NAME,
+			   C.REASON,
+			   A.CUSER,
+			   CASE WHEN A.CUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.CUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_NAME,
+			   CASE WHEN A.CUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.CUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_ID,
+			   A.CDATE,
+			   A.UUSER,
+			   CASE WHEN A.UUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.UUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_NAME,
+			   CASE WHEN A.UUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.UUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_ID,
+			   A.UDATE,
+   			   B.DIVISION_SCORE,
+			   B.PICKUP_SCORE,
+			   B.KATALK_SCORE,
+			   B.SNS_SCORE,
+			   B.INFO_SCORE,
+			   B.BBS_SCORE,
+			   B.TOTAL_SCORE,
+			   B.RECOMMEND_SEQ,
+			   (SELECT MAX(CDATE) FROM T_MEMBER_LOG WHERE MEM_NO = A.MEM_NO) LOGIN_DATE,
+			   (SELECT MAX(CDATE) FROM T_MEMBER_CLINIC_LOG WHERE MEM_NO = A.MEM_NO) LOGIN_CLINIC_DATE
+		  FROM T_MEMBER A
+		  	   JOIN T_CLINIC B
+		  	      ON B.MEM_NO = A.MEM_NO
+		  	   LEFT OUTER JOIN (SELECT AA.MEM_NO, AA.APPROVE, BB.NAME APPROVE_NAME, AA.REASON, AA.CDATE
+		  	                      FROM T_CLINIC_JOIN AA, T_CODE BB
+		  	                     WHERE AA.APPROVE = CONCAT(BB.CODE1, BB.CODE2)
+		  	                       AND (AA.MEM_NO, AA.JNO) IN (SELECT MEM_NO, MAX(JNO) FROM T_CLINIC_JOIN CC GROUP BY CC.MEM_NO)) C
+		  	      ON C.MEM_NO = A.MEM_NO
+		 WHERE A.MEM_NO = #{memNo}
+	</select>
+
+	<select id="infoById" parameterType="java.lang.String" resultType="Clinic">
+		SELECT A.MEM_NO,
+			   A.MEM_ID,
+			   A.NAME,
+			   A.MTEL1,
+			   A.MTEL2,
+			   A.EMAIL,
+			   A.EMAIL_YN,
+			   A.SMS_YN,
+			   B.CLINIC_ID,
+			   B.CLINIC_NAME,
+			   B.ZIP,
+			   B.ADDR1,
+			   B.ADDR2,
+			   B.TEL1,
+			   B.TEL2,
+			   B.INTRO,
+			   B.SUBJECT,
+			   B.MON_SH,
+			   B.MON_SM,
+			   B.MON_EH,
+			   B.MON_EM,
+			   B.MON_CLOSE,
+			   B.TUE_SH,
+			   B.TUE_SM,
+			   B.TUE_EH,
+			   B.TUE_EM,
+			   B.TUE_CLOSE,
+			   B.WED_SH,
+			   B.WED_SM,
+			   B.WED_EH,
+			   B.WED_EM,
+			   B.WED_CLOSE,
+			   B.THU_SH,
+			   B.THU_SM,
+			   B.THU_EH,
+			   B.THU_EM,
+			   B.THU_CLOSE,
+			   B.FRI_SH,
+			   B.FRI_SM,
+			   B.FRI_EH,
+			   B.FRI_EM,
+			   B.FRI_CLOSE,
+			   B.SAT_SH,
+			   B.SAT_SM,
+			   B.SAT_EH,
+			   B.SAT_EM,
+			   B.SAT_CLOSE,
+			   B.SUN_SH,
+			   B.SUN_SM,
+			   B.SUN_EH,
+			   B.SUN_EM,
+			   B.SUN_CLOSE,
+			   B.HOLIDAY_SH,
+			   B.HOLIDAY_SM,
+			   B.HOLIDAY_EH,
+			   B.HOLIDAY_EM,
+			   B.HOLIDAY_CLOSE,
+			   B.LUNCH_SH,
+			   B.LUNCH_SM,
+			   B.LUNCH_EH,
+			   B.LUNCH_EM,
+			   B.LUNCH_YN,
+			   B.ALARM_TEL1,
+			   B.ALARM_TEL2,
+			   B.ALARM_TYPE,
+			   B.BLOG,
+			   B.YOUTUBE,
+			   B.FACEBOOK,
+			   B.INSTAGRAM,
+			   B.TWITTER,
+			   B.BUSINESS_NO,
+			   B.BUSINESS_NAME,
+			   B.BUSINESS_NO2,
+			   B.BUSINESS_NAME2,
+			   B.MEDICAL_NO,
+			   B.TAX_TYPE,
+			   B.BANK,
+			   B.DEPOSITOR,
+			   B.DEPOSITOR_NOT,
+			   B.ACCOUNT,
+			   B.DISP_YN,
+			   B.LATITUDE,
+			   B.LONGITUDE,
+			   B.DOCTOR_INTRO,
+			   B.DOCTOR_HISTORY,
+			   B.RESERVATION_YN,
+			   B.DIVISION_YN,
+			   B.PICKUP_YN,
+			   B.KATALK_YN,
+			   B.KATALK_ID,
+			   B.CLINIC_SELL_CD,
+			   B.CLINIC_BUY_CD,
+			   B.BUSINESS_OWNER,
+			   B.BUSINESS_ITEM,
+			   B.BUSINESS_TYPE,
+			   B.BUSINESS_OWNER2,
+			   B.BUSINESS_ITEM2,
+			   B.BUSINESS_TYPE2,
+			   B.NOTICE_YN,
+			   B.NOTICE,
+			   C.APPROVE,
+			   C.APPROVE_NAME,
+			   C.REASON,
+			   A.CUSER,
+			   CASE WHEN A.CUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.CUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_NAME,
+			   CASE WHEN A.CUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.CUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_ID,
+			   A.CDATE,
+			   A.UUSER,
+			   CASE WHEN A.UUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.UUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_NAME,
+			   CASE WHEN A.UUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.UUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_ID,
+			   A.UDATE,
+   			   B.DIVISION_SCORE,
+			   B.PICKUP_SCORE,
+			   B.KATALK_SCORE,
+			   B.SNS_SCORE,
+			   B.INFO_SCORE,
+			   B.BBS_SCORE,
+			   B.TOTAL_SCORE,
+			   B.RECOMMEND_SEQ,
+			   (SELECT MAX(CDATE) FROM T_MEMBER_LOG WHERE MEM_NO = A.MEM_NO) LOGIN_DATE,
+			   (SELECT MAX(CDATE) FROM T_MEMBER_CLINIC_LOG WHERE MEM_NO = A.MEM_NO) LOGIN_CLINIC_DATE
+		  FROM T_MEMBER A
+		  	   JOIN T_CLINIC B
+		  	      ON B.MEM_NO = A.MEM_NO
+		  	   LEFT OUTER JOIN (SELECT AA.MEM_NO, AA.APPROVE, BB.NAME APPROVE_NAME, AA.REASON, AA.CDATE
+		  	                      FROM T_CLINIC_JOIN AA, T_CODE BB
+		  	                     WHERE AA.APPROVE = CONCAT(BB.CODE1, BB.CODE2)
+		  	                       AND (AA.MEM_NO, AA.JNO) IN (SELECT MEM_NO, MAX(JNO) FROM T_CLINIC_JOIN CC GROUP BY CC.MEM_NO)) C
+		  	      ON C.MEM_NO = A.MEM_NO
+		 WHERE A.MEM_ID = #{memId}
+	</select>
+
+	<select id="infoSap" parameterType="java.lang.Integer" resultType="SapVendor">
+		SELECT B.CLINIC_NAME VD_NM,
+			   B.ZIP POST_NO,
+			   B.ADDR1 DTL_ADDR_1,
+			   B.ADDR2 DTL_ADDR_2,
+			   'KR' NAT_CD,
+			   CONCAT(B.TEL1,B.TEL2) PHONE_NO,
+			   '' FAX_NO,
+			   A.EMAIL EMAIL,
+			   B.BUSINESS_NO BIZ_REG_NO,
+			   B.BUSINESS_NO2 BIZ_REG_NO2,
+			   '' CORP_REG_NO,
+			   B.BUSINESS_OWNER2 REP_NM,
+			   B.BUSINESS_TYPE2 BOS,
+			   B.BUSINESS_ITEM2 TOB,
+		       (SELECT SAP_CODE FROM T_CODE WHERE CONCAT(CODE1, CODE2) = B.BANK) BANKL,
+			   B.ACCOUNT BANKN,
+			   B.DEPOSITOR KOINH
+		  FROM T_MEMBER A
+		  	   JOIN T_CLINIC B
+		  	      ON B.MEM_NO = A.MEM_NO
+		 WHERE A.MEM_NO = #{memNo}
+	</select>
+
+	<select id="getClinicJoinList" parameterType="java.lang.Integer" resultType="ClinicJoin">
+		<![CDATA[
+		SELECT A.JNO,
+			   A.MEM_NO,
+			   A.APPROVE,
+			   B.NAME APPROVE_NAME,
+			   A.REASON,
+			   A.CDATE,
+			   A.CUSER,
+			   A.UDATE,
+			   A.UUSER
+		  FROM T_CLINIC_JOIN A, T_CODE B
+		 WHERE A.APPROVE = CONCAT(B.CODE1, B.CODE2)
+           AND A.MEM_NO = #{memNo}
+		]]>
+		ORDER BY A.JNO DESC
+	</select>
+
+	<select id="getClinicImgList" parameterType="java.lang.Integer" resultType="ClinicImg">
+		<![CDATA[
+		SELECT A.INO,
+			   A.MEM_NO,
+			   A.GUBUN,
+			   A.ATTACH,
+			   A.ATTACH_ORG_NAME,
+			   A.CUSER,
+			   A.CDATE
+		  FROM T_CLINIC_IMG A
+		 WHERE A.MEM_NO = #{memNo}
+		]]>
+		ORDER BY A.INO DESC
+	</select>
+
+	<update id="update" parameterType="Clinic">
+		UPDATE T_MEMBER
+		   SET
+		   	   NAME	    = #{name},
+		   	   MTEL1	= #{mtel1},
+		   	   MTEL2	= #{mtel2},
+		   	   EMAIL	= #{email},
+		   	   EMAIL_YN	= #{emailYn},
+		   	   SMS_YN	= #{smsYn},
+			   UDATE	= NOW(),
+			   UUSER	= #{cuser}
+		 WHERE MEM_NO	= #{memNo}
+	</update>
+
+	<update id="updateClinic" parameterType="Clinic">
+		UPDATE T_CLINIC
+		   SET
+			   CLINIC_NAME	    = #{clinicName},
+			   ZIP              = #{zip},
+			   ADDR1            = #{addr1},
+			   ADDR2            = #{addr2},
+			   TEL1             = #{tel1},
+			   TEL2             = #{tel2},
+			   INTRO            = #{intro},
+			   SUBJECT          = #{subject},
+			   MON_SH           = #{monSh},
+			   MON_SM           = #{monSm},
+			   MON_EH           = #{monEh},
+			   MON_EM           = #{monEm},
+			   MON_CLOSE        = #{monClose},
+			   TUE_SH           = #{tueSh},
+			   TUE_SM           = #{tueSm},
+			   TUE_EH           = #{tueEh},
+			   TUE_EM           = #{tueEm},
+			   TUE_CLOSE        = #{tueClose},
+			   WED_SH           = #{wedSh},
+			   WED_SM           = #{wedSm},
+			   WED_EH           = #{wedEh},
+			   WED_EM           = #{wedEm},
+			   WED_CLOSE        = #{wedClose},
+			   THU_SH           = #{thuSh},
+			   THU_SM           = #{thuSm},
+			   THU_EH           = #{thuEh},
+			   THU_EM           = #{thuEm},
+			   THU_CLOSE        = #{thuClose},
+			   FRI_SH           = #{friSh},
+			   FRI_SM           = #{friSm},
+			   FRI_EH           = #{friEh},
+			   FRI_EM           = #{friEm},
+			   FRI_CLOSE        = #{friClose},
+			   SAT_SH           = #{satSh},
+			   SAT_SM           = #{satSm},
+			   SAT_EH           = #{satEh},
+			   SAT_EM           = #{satEm},
+			   SAT_CLOSE        = #{satClose},
+			   SUN_SH           = #{sunSh},
+			   SUN_SM           = #{sunSm},
+			   SUN_EH           = #{sunEh},
+			   SUN_EM           = #{sunEm},
+			   SUN_CLOSE        = #{sunClose},
+			   HOLIDAY_SH       = #{holidaySh},
+			   HOLIDAY_SM       = #{holidaySm},
+			   HOLIDAY_EH       = #{holidayEh},
+			   HOLIDAY_EM       = #{holidayEm},
+			   HOLIDAY_CLOSE    = #{holidayClose},
+			   LUNCH_SH         = #{lunchSh},
+			   LUNCH_SM         = #{lunchSm},
+			   LUNCH_EH         = #{lunchEh},
+			   LUNCH_EM         = #{lunchEm},
+			   LUNCH_YN         = #{lunchYn},
+			   ALARM_TEL1       = #{alarmTel1},
+			   ALARM_TEL2       = #{alarmTel2},
+			   ALARM_TYPE       = #{alarmType},
+			   BLOG             = #{blog},
+			   YOUTUBE          = #{youtube},
+			   FACEBOOK         = #{facebook},
+			   INSTAGRAM        = #{instagram},
+			   TWITTER          = #{twitter},
+			   BUSINESS_NO      = #{businessNo},
+			   BUSINESS_NAME    = #{businessName},
+			   BUSINESS_NO2     = #{businessNo2},
+			   BUSINESS_NAME2   = #{businessName2},
+			   MEDICAL_NO       = #{medicalNo},
+			   TAX_TYPE         = #{taxType},
+			   BANK             = #{bank},
+			   DEPOSITOR        = #{depositor},
+			   DEPOSITOR_NOT    = #{depositorNot},
+			   ACCOUNT          = #{account},
+			   DISP_YN          = #{dispYn},
+			   LATITUDE         = #{latitude},
+			   LONGITUDE        = #{longitude},
+			   DOCTOR_INTRO     = #{doctorIntro},
+			   DOCTOR_HISTORY   = #{doctorHistory},
+			   DIVISION_YN      = #{divisionYn},
+			   PICKUP_YN        = #{pickupYn},
+			   KATALK_YN        = #{katalkYn},
+			   KATALK_ID        = #{katalkId},
+			   RESERVATION_YN   = #{reservationYn},
+			   BUSINESS_OWNER   = #{businessOwner},
+			   BUSINESS_ITEM    = #{businessItem},
+			   BUSINESS_TYPE    = #{businessType},
+			   BUSINESS_OWNER2  = #{businessOwner2},
+			   BUSINESS_ITEM2   = #{businessItem2},
+			   BUSINESS_TYPE2   = #{businessType2},
+			   NOTICE_YN        = #{noticeYn},
+			   NOTICE           = #{notice},
+			   CLINIC_SELL_CD   = #{clinicSellCd},
+			   CLINIC_BUY_CD    = #{clinicBuyCd}
+		 WHERE MEM_NO	        = #{memNo}
+	</update>
+
+	<insert id="insertJoin" parameterType="ClinicJoin">
+		INSERT INTO T_CLINIC_JOIN (
+			MEM_NO,
+			APPROVE,
+			REASON,
+			SEND_MSG,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{memNo},
+			#{approve},
+			#{reason},
+			#{sendMsg},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+
+	<delete id="deleteClinicImg" parameterType="java.lang.Integer">
+		DELETE FROM T_CLINIC_IMG
+		 WHERE MEM_NO = #{memNo}
+	</delete>
+
+	<insert id="insertClinicImg" parameterType="ClinicImg">
+		INSERT INTO T_CLINIC_IMG (
+			MEM_NO,
+			GUBUN,
+			ATTACH,
+			ATTACH_ORG_NAME,
+			CUSER,
+			CDATE
+		) VALUES (
+			#{memNo},
+			#{gubun},
+			#{attach},
+			#{attachOrgName},
+			#{cuser},
+			NOW()
+		)
+	</insert>
+
+	<update id="updateClinicVendor" parameterType="SapVendorOut">
+		UPDATE T_CLINIC
+		   SET
+			   clinic_sell_cd   = #{pntCtrCd},
+			   clinic_buy_cd    = #{pntVdrCd}
+		 WHERE MEM_NO	        = #{memNo}
+	</update>
+	<select id="recommendList" parameterType="ClinicSearch" resultType="Clinic">
+		<![CDATA[
+		SELECT A.MEM_NO,
+			   A.MEM_ID,
+			   A.NAME,
+			   B.CLINIC_ID,
+			   B.CLINIC_NAME,
+   			   B.DIVISION_SCORE,
+			   B.PICKUP_SCORE,
+			   B.KATALK_SCORE,
+			   B.SNS_SCORE,
+			   B.INFO_SCORE,
+			   B.BBS_SCORE,
+			   B.TOTAL_SCORE
+		  FROM T_MEMBER A
+		  	   JOIN T_CLINIC B
+		  	      ON B.MEM_NO = A.MEM_NO
+		  	   LEFT OUTER JOIN (SELECT AA.MEM_NO, AA.APPROVE, BB.NAME APPROVE_NAME, AA.REASON, AA.CDATE
+		  	                      FROM T_CLINIC_JOIN AA, T_CODE BB
+		  	                     WHERE AA.APPROVE = CONCAT(BB.CODE1, BB.CODE2)
+		  	                       AND (AA.MEM_NO, AA.JNO) IN (SELECT MEM_NO, MAX(JNO) FROM T_CLINIC_JOIN CC GROUP BY CC.MEM_NO)) C
+		  	      ON C.MEM_NO = A.MEM_NO
+		 WHERE A.STATUS <> 'D'
+		   AND A.CLINIC_YN ='Y'
+		   AND NULLIF(B.RECOMMEND_SEQ,'') IS NOT NULL
+		]]>
+		ORDER BY B.RECOMMEND_SEQ
+		LIMIT 10 OFFSET #{offset}
+	</select>
+
+
+	<update id="deleteBbs" parameterType="Member">
+		DELETE
+		  FROM T_BBS
+		 WHERE CUSER = #{memNo}
+	</update>
+
+
+	<update id="deleteBbsComment" parameterType="Member">
+		DELETE
+		  FROM t_bbs_comment
+		 WHERE CUSER = #{memNo}
+	</update>
+
+	<select id="infoMem" parameterType="ClinicSearch" resultType="Member">
+		SELECT A.MEM_NO,
+			   A.MEM_ID,
+			   A.NAME,
+			   A.MTEL1,
+			   A.MTEL2,
+			   A.EMAIL,
+			   A.EMAIL_YN,
+			   A.SMS_YN
+		  FROM T_MEMBER A
+		 WHERE A.MEM_NO = #{memNo}
+	</select>
+
+</mapper>

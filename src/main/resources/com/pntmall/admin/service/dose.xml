@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Dose">
+	<select id="list" parameterType="java.lang.String" resultType="Dose">
+		<![CDATA[
+		SELECT DOSE_NO,
+			   IMG,
+			   CONTENT,
+			   CASE WHEN STATUS = 'S' THEN '활성'
+			   		ELSE '비활성' END AS STATUS_NAME
+		  FROM T_DOSE
+		 WHERE STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(content)">
+		   AND CONTENT LIKE CONCAT('%', #{content}, '%')
+		</if>
+		ORDER BY RANK
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Dose">
+		SELECT DOSE_NO,
+			   IMG,
+			   CONTENT,
+			   RANK,
+			   STATUS
+		  FROM T_DOSE
+		 WHERE DOSE_NO = #{doseNo}
+	</select>
+
+	<insert id="insert" parameterType="Dose">
+		INSERT INTO T_DOSE (
+			IMG,
+			CONTENT,
+			RANK,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{img},
+			#{content},
+			#{rank},
+			#{status},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+	
+	<update id="update" parameterType="Dose">
+		UPDATE T_DOSE
+		   SET IMG			= #{img},
+		   	   CONTENT		= #{content},
+		   	   RANK			= #{rank},
+		   	   STATUS		= #{status},
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE DOSE_NO		= #{doseNo}
+	</update>
+
+	<update id="updateRank" parameterType="Dose">
+		UPDATE T_DOSE
+		   SET RANK			= #{rank},
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE DOSE_NO		= #{doseNo}
+	</update>
+
+	<update id="delete" parameterType="Dose">
+		UPDATE T_DOSE
+		   SET STATUS		= 'D',
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE DOSE_NO		= #{doseNo}
+	</update>
+</mapper>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Category">
+	<select id="list" parameterType="java.lang.Integer" resultType="Category">
+		<![CDATA[
+		SELECT A.CATE_NO,
+			   A.PCATE_NO,
+			   A.NAME,
+			   A.RANK,
+			   A.REMARK,
+			   CASE WHEN A.STATUS = 'S' THEN '활성'
+			   		ELSE '비활성' END AS STATUS_NAME,
+			   B.NAME PNAME
+		  FROM T_CATEGORY A
+		  	   LEFT OUTER JOIN T_CATEGORY B
+		  	   	ON A.PCATE_NO = B.CATE_NO
+		 WHERE A.PCATE_NO = #{pcateNo}
+		   AND A.STATUS <> 'D'
+		ORDER BY A.RANK
+		]]>
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Category">
+		SELECT CATE_NO,
+			   PCATE_NO,
+			   NAME,
+			   RANK,
+			   REMARK,
+			   STATUS
+		  FROM T_CATEGORY
+		 WHERE CATE_NO = #{cateNo}
+	</select>
+
+	<insert id="insert" parameterType="Category">
+		INSERT INTO T_CATEGORY (
+			PCATE_NO,
+			NAME,
+			RANK,
+		    REMARK,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{pcateNo},
+			#{name},
+			#{rank},
+			#{remark},
+			#{status},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+	
+	<update id="update" parameterType="Category">
+		UPDATE T_CATEGORY
+		   SET NAME			= #{name},
+		   	   RANK			= #{rank},
+		   	   REMARK		= #{remark},
+		   	   STATUS		= #{status},
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE CATE_NO		= #{cateNo}
+	</update>
+
+	<update id="updateRank" parameterType="Category">
+		UPDATE T_CATEGORY
+		   SET RANK			= #{rank},
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE CATE_NO		= #{cateNo}
+	</update>
+	
+	<update id="delete" parameterType="Category">
+		UPDATE T_CATEGORY
+		   SET STATUS		= 'D',
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE CATE_NO		= #{cateNo}
+	</update>
+	
+	<select id="allList" resultType="Category">
+		<![CDATA[
+		SELECT A.*,
+			   B.NAME PNAME
+		  FROM T_CATEGORY A
+		  	   LEFT OUTER JOIN T_CATEGORY B
+		  	   	ON A.PCATE_NO = B.CATE_NO
+		 WHERE A.STATUS <> 'D'
+		ORDER BY B.RANK, A.RANK
+		]]>
+	</select>
+</mapper>

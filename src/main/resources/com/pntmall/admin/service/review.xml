@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Review">
+	<select id="list" parameterType="ReviewSearch" resultType="Review">
+		<![CDATA[
+		SELECT A.REVIEW_NO,
+               A.TYPE1,
+			   CASE WHEN A.TYPE1 = 1 THEN '포토리뷰'
+			        ELSE '일반리뷰' END AS TYPE1_NAME,
+			   A.TYPE2,
+			   CASE WHEN A.TYPE2 = 1 THEN '일반리뷰'
+			        ELSE '한달리뷰' END AS TYPE2_NAME,
+               A.PNO,
+               A.STAR,
+               A.TITLE,
+               A.CONTENT,
+               A.BEST_YN,
+               A.BEST_SEQ,
+               A.MAIN_YN,
+               A.REVIEW_YN,
+               A.REVIEW_SEQ,
+               A.DISP_YN,
+               A.STATUS,
+               A.COMMENT,
+               A.CMT_CUSER,
+			   CASE WHEN A.CMT_CUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.CMT_CUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.CMT_CUSER) END AS CMT_CUSER_NAME,
+			   CASE WHEN A.CMT_CUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.CMT_CUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.CMT_CUSER) END AS CMT_CUSER_ID,
+               A.CMT_CDATE,
+               A.CMT_UUSER,
+			   CASE WHEN A.CMT_UUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.CMT_UUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.CMT_UUSER) END AS CMT_UUSER_NAME,
+			   CASE WHEN A.CMT_UUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.CMT_UUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.CMT_UUSER) END AS CMT_UUSER_ID,
+               A.CMT_UDATE,
+			   A.CUSER,
+			   CASE WHEN A.CUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.CUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_NAME,
+			   CASE WHEN A.CUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.CUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_ID,
+			   A.CDATE,
+			   A.UUSER,
+			   CASE WHEN A.UUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.UUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_NAME,
+			   CASE WHEN A.UUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.UUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_ID,
+			   A.UDATE,
+			   B.PNAME
+		  FROM T_REVIEW A
+		  	   JOIN T_PRODUCT B
+		  	        ON A.PNO = B.PNO
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(cate1)">
+		   AND B.PNO IN ( SELECT PNO FROM T_PRODUCT_CATEGORY WHERE CATE_NO IN (SELECT CATE_NO FROM T_CATEGORY WHERE PCATE_NO = #{cate1}) )
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(cate2)">
+           AND B.PNO IN ( SELECT PNO FROM T_PRODUCT_CATEGORY WHERE CATE_NO = #{cate1})
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(star)">
+           AND A.STAR = #{star}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(pno)">
+           AND A.PNO = #{pno}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(pname)">
+		   AND B.PNAME LIKE CONCAT('%', #{pname}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(cuserName)">
+		   AND A.CUSER IN (SELECT MEM_NO FROM T_MEMBER WHERE NAME LIKE CONCAT('%', #{cuserName}, '%') )
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromDate)">
+		<![CDATA[
+		   AND A.CDATE >= #{fromDate}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toDate)">
+		<![CDATA[
+		   AND A.CDATE < DATE_ADD(#{toDate}, INTERVAL 1 DAY)
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(type1)">
+		<![CDATA[
+		   AND A.TYPE1 = #{type1}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(type2)">
+		<![CDATA[
+		   AND A.TYPE2 = #{type2}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(bestYn)">
+		<![CDATA[
+		   AND A.BEST_YN = #{bestYn}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(mainYn)">
+		<![CDATA[
+		   AND A.MAIN_YN = #{mainYn}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(reviewYn)">
+		<![CDATA[
+		   AND A.REVIEW_YN = #{reviewYn}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(commentYn)">
+			<if test='@com.pntmall.common.mybatis.Check@equals(commentYn, "Y")'>
+			   AND NULLIF(A.COMMENT,'') IS NOT NULL
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(commentYn, "N")'>
+			<![CDATA[
+			   AND NULLIF(A.COMMENT,'') IS NULL
+			]]>
+			</if>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		ORDER BY A.REVIEW_NO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="ReviewSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_REVIEW A
+		  	   JOIN T_PRODUCT B
+		  	        ON A.PNO = B.PNO
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(cate1)">
+		   AND B.PNO IN ( SELECT PNO FROM T_PRODUCT_CATEGORY WHERE CATE_NO IN (SELECT CATE_NO FROM T_CATEGORY WHERE PCATE_NO = #{cate1}) )
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(cate2)">
+           AND B.PNO IN ( SELECT PNO FROM T_PRODUCT_CATEGORY WHERE CATE_NO = #{cate1})
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(star)">
+           AND A.STAR = #{star}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(pno)">
+           AND A.PNO = #{pno}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(pname)">
+		   AND B.PNAME LIKE CONCAT('%', #{pname}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(cuserName)">
+		   AND A.CUSER IN (SELECT MEM_NO FROM T_MEMBER WHERE NAME LIKE CONCAT('%', #{cuserName}, '%') )
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromDate)">
+		<![CDATA[
+		   AND A.CDATE >= #{fromDate}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toDate)">
+		<![CDATA[
+		   AND A.CDATE < DATE_ADD(#{toDate}, INTERVAL 1 DAY)
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(type1)">
+		<![CDATA[
+		   AND A.TYPE1 = #{type1}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(type2)">
+		<![CDATA[
+		   AND A.TYPE2 = #{type2}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(bestYn)">
+		<![CDATA[
+		   AND A.BEST_YN = #{bestYn}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(mainYn)">
+		<![CDATA[
+		   AND A.MAIN_YN = #{mainYn}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(reviewYn)">
+		<![CDATA[
+		   AND A.REVIEW_YN = #{reviewYn}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(commentYn)">
+			<if test='@com.pntmall.common.mybatis.Check@equals(commentYn, "Y")'>
+			   AND NULLIF(A.COMMENT,'') IS NOT NULL
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(commentYn, "N")'>
+			<![CDATA[
+			   AND NULLIF(A.COMMENT,'') IS NULL
+			]]>
+			</if>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+	</select>
+
+	<select id="info" parameterType="ReviewSearch" resultType="Review">
+		<![CDATA[
+		SELECT A.REVIEW_NO,
+			   A.TYPE1,
+			   CASE WHEN A.TYPE1 = 1 THEN '포토리뷰'
+			        ELSE '일반리뷰' END AS TYPE1_NAME,
+			   A.TYPE2,
+			   CASE WHEN A.TYPE2 = 1 THEN '일반리뷰'
+			        ELSE '한달리뷰' END AS TYPE2_NAME,
+			   A.PNO,
+			   A.STAR,
+			   A.TITLE,
+			   A.CONTENT,
+			   A.BEST_YN,
+			   A.BEST_POINT_YN,
+			   A.BEST_SEQ,
+			   A.MAIN_YN,
+			   A.REVIEW_YN,
+			   A.REVIEW_SEQ,
+			   A.DISP_YN,
+			   A.STATUS,
+			   A.CUSER,
+			   CASE WHEN A.CUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.CUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_NAME,
+			   CASE WHEN A.CUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.CUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_ID,
+			   A.CDATE,
+			   A.UUSER,
+			   CASE WHEN A.UUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.UUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_NAME,
+			   CASE WHEN A.UUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.UUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.UUSER) END AS UUSER_ID,
+			   A.UDATE,
+			   A.COMMENT,
+			   A.CMT_CUSER,
+			   CASE WHEN A.CMT_CUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.CMT_CUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.CMT_CUSER) END AS UUSER_NAME,
+			   CASE WHEN A.CMT_CUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.CMT_CUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.CMT_CUSER) END AS UUSER_ID,
+			   A.CMT_CDATE,
+			   A.CMT_UUSER,
+			   CASE WHEN A.CMT_UUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.CMT_UUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.CMT_UUSER) END AS UUSER_NAME,
+			   CASE WHEN A.CMT_UUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.CMT_UUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.CMT_UUSER) END AS UUSER_ID,
+			   A.CMT_UDATE,
+			   B.PNAME
+		  FROM T_REVIEW A
+		  	   JOIN T_PRODUCT B
+		  	        ON A.PNO = B.PNO
+		 WHERE REVIEW_NO = #{reviewNo}
+		 ]]>
+	</select>
+
+	<select id="getReviewImgList" parameterType="ReviewSearch" resultType="ReviewImg">
+		<![CDATA[
+		SELECT A.INO,
+			   A.REVIEW_NO,
+			   A.ATTACH,
+			   A.ATTACH_ORG_NAME
+		  FROM T_REVIEW_IMG A
+		 WHERE A.REVIEW_NO = #{reviewNo}
+		]]>
+		ORDER BY A.INO DESC
+	</select>
+
+	<insert id="insert" parameterType="Review" useGeneratedKeys="true" keyProperty="reviewNo" keyColumn="REVIEW_NO">
+		INSERT INTO T_REVIEW (
+			TYPE1,
+			TYPE2,
+			PNO,
+			STAR,
+			TITLE,
+			CONTENT,
+			REVIEW_YN,
+			BEST_YN,
+			BEST_POINT_YN,
+			MAIN_YN,
+			DISP_YN,
+			STATUS,
+			CUSER,
+			CDATE,
+			ORDERID
+		) VALUES (
+					 #{type1},
+					 #{type2},
+					 #{pno},
+					 #{star},
+					 #{title},
+					 #{content},
+					 #{reviewYn},
+					 #{bestYn},
+					 'N',
+					 #{mainYn},
+					 #{dispYn},
+					 'S',
+					 #{cuser},
+					 NOW(),
+					 null
+				 )
+	</insert>
+
+	<insert id="insertReviewImg" parameterType="ReviewImg">
+		INSERT INTO T_REVIEW_IMG (
+			REVIEW_NO,
+			ATTACH,
+			ATTACH_ORG_NAME
+		) VALUES (
+					 #{reviewNo},
+					 #{attach},
+					 #{attachOrgName}
+				 )
+	</insert>
+
+	<update id="addUpdate" parameterType="Review">
+		UPDATE T_REVIEW
+		SET TYPE1		= #{type1},
+			TYPE2		= #{type2},
+			STAR		= #{star},
+		    PNO			= #{pno},
+			TITLE		= #{title},
+			CONTENT		= #{content},
+		    REVIEW_YN	= #{reviewYn},
+			DISP_YN		= #{dispYn},
+			REVIEW_NO	= #{reviewNo},
+			BEST_YN		= #{bestYn},
+			MAIN_YN		= #{mainYn},
+		    CUSER 		= #{cuser},
+			UUSER		= #{uuser},
+			UDATE		= NOW()
+		WHERE REVIEW_NO	= #{reviewNo}
+	</update>
+
+	<update id="update" parameterType="Review">
+		UPDATE T_REVIEW
+		   SET REVIEW_YN	= #{reviewYn},
+			   DISP_YN		= #{dispYn},
+			   REVIEW_NO	= #{reviewNo},
+			   BEST_YN		= #{bestYn},
+			   BEST_POINT_YN= #{bestPointYn},
+			   MAIN_YN		= #{mainYn},
+			   COMMENT		= #{comment},
+			   UUSER		= #{uuser},
+			   UDATE		= NOW()
+		 WHERE REVIEW_NO	= #{reviewNo}
+	</update>
+
+	<update id="updateBestSeq" parameterType="Review">
+		UPDATE T_REVIEW
+		   SET BEST_SEQ	    = #{bestSeq},
+			   UUSER		= #{uuser},
+			   UDATE		= NOW()
+		 WHERE REVIEW_NO	= #{reviewNo}
+	</update>
+
+	<update id="updateBestSeqBefore" parameterType="Review">
+		UPDATE T_REVIEW
+		   SET BEST_SEQ	    = BEST_SEQ + 1,
+			   UUSER		= #{uuser},
+			   UDATE		= NOW()
+		 WHERE PNO = #{pno}
+		   AND BEST_SEQ >= #{bestSeq}
+	</update>
+
+
+	<update id="updateReviewSeq" parameterType="Review">
+		UPDATE T_REVIEW
+		   SET REVIEW_SEQ	= #{reviewSeq},
+			   UUSER		= #{uuser},
+			   UDATE		= NOW()
+		 WHERE REVIEW_NO	= #{reviewNo}
+	</update>
+
+	<update id="updateReviewSeqBefore" parameterType="Review">
+		UPDATE T_REVIEW
+		   SET REVIEW_SEQ	= REVIEW_SEQ + 1,
+			   UUSER		= #{uuser},
+			   UDATE		= NOW()
+		 WHERE PNO = #{pno}
+		   AND REVIEW_SEQ >= #{reviewSeq}
+	</update>
+
+</mapper>

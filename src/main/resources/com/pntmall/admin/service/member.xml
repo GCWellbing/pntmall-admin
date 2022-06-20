@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Member">
+	<select id="list" parameterType="MemberSearch" resultType="Member">
+		<![CDATA[
+		SELECT STRAIGHT_JOIN A.MEM_NO,
+			   A.MEM_ID,
+			   A.PASSWD,
+			   A.NAME,
+			   A.BIRTHDAY,
+			   A.GENDER,
+			   A.MTEL1,
+			   A.MTEL2,
+			   A.EMAIL,
+			   IFNULL( NULLIF(A.SMS_YN,''),'N') SMS_YN,
+			   IFNULL( NULLIF(A.EMAIL_YN,''),'N') EMAIL_YN,
+			   A.HEIGHT,
+			   A.WEIGHT,
+			   A.GRADE_NO,
+			   (SELECT C.NAME FROM T_MEM_GRADE C WHERE A.GRADE_NO = C.GRADE_NO) GRADE_NAME,
+			   A.CLINIC_YN,
+			   (SELECT COUNT(*) FROM T_MEMBER_LOG WHERE MEM_NO = A.MEM_NO) LOGIN_CNT,
+   			   (SELECT MAX(CDATE) FROM T_MEMBER_LOG WHERE MEM_NO = A.MEM_NO) LOGIN_DATE,
+			   A.SLEEP_YN,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CDATE,
+			   A.UDATE,
+			   A.JOIN_DEVICE,
+			   IFNULL((SELECT CUR_POINT FROM T_POINT WHERE PNO = (SELECT MAX(PNO) FROM T_POINT WHERE MEM_NO = A.MEM_NO GROUP BY MEM_NO)),'0')  CUR_POINT,
+			   COALESCE((SELECT SNS_TYPE_FL FROM T_MEMBERSNS WHERE MEM_NO = A.MEM_NO AND SNS_JOIN_FL ='Y'  ),'일반가입') JOIN_TYPE,
+			   O.ORDER_CNT,
+			   O.ORDER_PAY_AMT,
+			   (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.MY_CLINIC_MEM_NO) CLINIC_ID,
+			   B.CLINIC_NAME,
+			   (SELECT COUNT(*) FROM T_MEMBERCS WHERE A.STATUS <> 'D' AND MEM_NO = A.MEM_NO) CS_CNT
+		  FROM T_MEMBER A
+		  	   LEFT OUTER JOIN T_CLINIC B
+		  	     ON A.MY_CLINIC_MEM_NO = B.MEM_NO
+		  		LEFT OUTER JOIN
+			       (SELECT MEM_NO, COUNT(*) ORDER_CNT, IFNULL(SUM(PAY_AMT), 0) ORDER_PAY_AMT
+					  FROM T_ORDER
+					 WHERE STATUS = '180'
+					 GROUP BY MEM_NO) O
+				ON A.MEM_NO = O.MEM_NO
+		 WHERE A.STATUS <> 'D'
+		   AND A.CLINIC_YN ='N'
+		   AND A.SLEEP_YN ='N'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memId)">
+		   AND A.MEM_ID LIKE CONCAT('%', #{memId}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(name)">
+		   AND A.NAME LIKE CONCAT('%', #{name}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gender)">
+		   AND A.GENDER = #{gender}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gradeNo)">
+		   AND A.GRADE_NO = #{gradeNo}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(mtel)">
+		   AND CONCAT(A.MTEL1, A.MTEL2) LIKE CONCAT('%', #{mtel}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(email)">
+		   AND A.EMAIL LIKE CONCAT('%', #{email}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicId)">
+		   AND A.MY_CLINIC_MEM_NO IN (SELECT MEM_NO FROM T_MEMBER WHERE MEM_ID LIKE CONCAT('%', #{clinicId}, '%'))
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromCdate)">
+		   AND A.CDATE >= #{fromCdate}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toCdate)">
+		<![CDATA[
+		   AND A.CDATE < DATE_ADD(#{toCdate}, INTERVAL 1 DAY)
+	    ]]>
+		</if>
+		ORDER BY A.MEM_NO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="MemberSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_MEMBER A
+		 WHERE A.STATUS <> 'D'
+		   AND A.CLINIC_YN ='N'
+		   AND A.SLEEP_YN ='N'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memId)">
+		   AND A.MEM_ID LIKE CONCAT('%', #{memId}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(name)">
+		   AND A.NAME LIKE CONCAT('%', #{name}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gender)">
+		   AND A.GENDER = #{gender}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gradeNo)">
+		   AND A.GRADE_NO = #{gradeNo}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(mtel)">
+		   AND CONCAT(A.MTEL1, A.MTEL2) LIKE CONCAT('%', #{mtel}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(email)">
+		   AND A.EMAIL LIKE CONCAT('%', #{email}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicId)">
+		   AND A.MY_CLINIC_MEM_NO IN (SELECT MEM_NO FROM T_MEMBER WHERE MEM_ID LIKE CONCAT('%', #{clinicId}, '%'))
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromCdate)">
+		   AND A.CDATE >= #{fromCdate}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toCdate)">
+		<![CDATA[
+		   AND A.CDATE < DATE_ADD(#{toCdate}, INTERVAL 1 DAY)
+	    ]]>
+		</if>
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Member">
+		SELECT A.MEM_NO,
+			   A.MEM_ID,
+			   A.PASSWD,
+			   A.NAME,
+			   A.BIRTHDAY,
+			   A.GENDER,
+			   A.MTEL1,
+			   A.MTEL2,
+			   A.EMAIL,
+			   A.SMS_YN,
+			   A.EMAIL_YN,
+			   A.HEIGHT,
+			   A.WEIGHT,
+			   A.GRADE_NO,
+			   C.NAME GRADE_NAME,
+			   A.CLINIC_YN,
+			   (SELECT COUNT(*) FROM T_MEMBER_LOG WHERE MEM_NO = A.MEM_NO) LOGIN_CNT,
+   			   (SELECT MAX(CDATE) FROM T_MEMBER_LOG WHERE MEM_NO = A.MEM_NO) LOGIN_DATE,
+			   A.SLEEP_YN,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CDATE,
+			   A.UDATE,
+			   A.MEMO,
+			   (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.MY_CLINIC_MEM_NO) CLINIC_ID,
+			   B.CLINIC_NAME,
+			   A.JOIN_DEVICE,
+			   COALESCE((SELECT SNS_TYPE_FL FROM T_MEMBERSNS WHERE MEM_NO = A.MEM_NO AND SNS_JOIN_FL ='Y' ),'일반가입') JOIN_TYPE
+		  FROM T_MEMBER A
+		  	   LEFT OUTER JOIN T_CLINIC B
+		  	     ON A.MY_CLINIC_MEM_NO = B.MEM_NO
+		  	   LEFT OUTER JOIN T_MEM_GRADE C
+		  	      ON A.GRADE_NO = C.GRADE_NO
+		 WHERE A.MEM_NO = #{memNo}
+	</select>
+
+	<select id="infoById" parameterType="java.lang.String" resultType="Member">
+		SELECT A.MEM_NO,
+			   A.MEM_ID,
+			   A.PASSWD,
+			   A.NAME,
+			   A.BIRTHDAY,
+			   A.GENDER,
+			   A.MTEL1,
+			   A.MTEL2,
+			   A.EMAIL,
+			   A.SMS_YN,
+			   A.EMAIL_YN,
+			   A.HEIGHT,
+			   A.WEIGHT,
+			   A.GRADE_NO,
+			   C.NAME GRADE_NAME,
+			   A.CLINIC_YN,
+			   (SELECT COUNT(*) FROM T_MEMBER_LOG WHERE MEM_NO = A.MEM_NO) LOGIN_CNT,
+   			   (SELECT MAX(CDATE) FROM T_MEMBER_LOG WHERE MEM_NO = A.MEM_NO) LOGIN_DATE,
+			   A.SLEEP_YN,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CDATE,
+			   A.UDATE,
+			   A.MEMO,
+			   B.CLINIC_ID,
+			   B.CLINIC_NAME,
+			   COALESCE((SELECT SNS_TYPE_FL FROM T_MEMBERSNS WHERE MEM_NO = A.MEM_NO  AND SNS_JOIN_FL ='Y'  ),'일반가입') JOIN_TYPE
+		  FROM T_MEMBER A
+		  	   JOIN T_CLINIC B
+		  	     ON A.MY_CLINIC_MEM_NO = B.MEM_NO
+		  	   LEFT OUTER JOIN T_MEM_GRADE C
+		  	      ON A.GRADE_NO = C.GRADE_NO
+		 WHERE A.MEM_ID = #{memId}
+	</select>
+
+	<select id="cslist" parameterType="java.lang.Integer" resultType="MemberCs">
+		<![CDATA[
+		SELECT A.MEM_NO,
+			   A.CNO,
+			   A.MEMO,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CDATE,
+			   A.CUSER,
+			   CASE WHEN A.CUSER > 2000000000 THEN (SELECT NAME FROM T_ADMIN WHERE ADMIN_NO = A.CUSER)
+			        ELSE (SELECT NAME FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_NAME,
+			   CASE WHEN A.CUSER > 2000000000 THEN (SELECT ADMIN_ID FROM T_ADMIN WHERE ADMIN_NO = A.CUSER)
+			        ELSE (SELECT MEM_ID FROM T_MEMBER WHERE MEM_NO = A.CUSER) END AS CUSER_ID,
+			   A.UDATE,
+			   A.UUSER
+		  FROM T_MEMBERCS A
+		 WHERE A.STATUS <> 'D'
+		   AND A.MEM_NO = #{memNo}
+		]]>
+		ORDER BY A.CNO DESC
+	</select>
+
+	<update id="update" parameterType="Member">
+		UPDATE T_MEMBER
+		   SET
+		   	   GRADE_NO		= #{gradeNo},
+		   	   MTEL1		= #{mtel1},
+		   	   MTEL2		= #{mtel2},
+		   	   EMAIL		= #{email},
+		   	   SMS_YN		= #{smsYn},
+		   	   EMAIL_YN		= #{emailYn},
+		       MEMO			= #{memo},
+			   UDATE		= NOW(),
+			   UUSER		= #{cuser}
+				<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicId)">
+		       , MY_CLINIC_MEM_NO = #{clinicId}
+				</if>
+		 WHERE MEM_NO	= #{memNo}
+	</update>
+
+	<insert id="insertCs" parameterType="MemberCs">
+		INSERT INTO T_MEMBERCS (
+			MEM_NO,
+			MEMO,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{memNo},
+			#{memo},
+			#{status},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+
+	<update id="updateCs" parameterType="MemberCs">
+		UPDATE T_MEMBERCS
+		   SET STATUS	= #{status},
+		   	   UUSER    = #{cuser},
+			   UDATE	= NOW()
+		 WHERE CNO	= #{cno}
+	</update>
+
+	<update id="updateSecede" parameterType="Member">
+		UPDATE T_MEMBER
+		   SET SECEDE_RSN = #{secedeRsn},
+		   	   SECEDE_MEMO = #{secedeMemo},
+		   	   STATUS = 'D',
+			   PASSWD = '',
+			   NAME = '',
+			   MTEL1 = '',
+			   MTEL2 = '',
+			   EMAIL = '',
+			   SMS_YN = '',
+			   EMAIL_YN = '',
+			   SLEEP_YN = '',
+		   	   SLEEP_INFO_YN = '',
+		   	   SLEEP_DATE = null,
+		   	   UUSER = #{uuser},
+		   	   UDATE = NOW()
+		 WHERE MEM_NO = #{memNo}
+	</update>
+
+	<update id="deleteSns" parameterType="Member">
+		DELETE
+		  FROM T_MEMBERSNS
+		 WHERE MEM_NO = #{memNo}
+	</update>
+
+	<update id="deleteAddress" parameterType="Member">
+		DELETE
+		  FROM T_ADDRESS
+		 WHERE MEM_NO = #{memNo}
+	</update>
+
+	<delete id="deletePoint" parameterType="Member">
+		DELETE
+		  FROM T_POINT
+		 WHERE MEM_NO = #{memNo}
+	</delete>
+
+	<delete id="deleteMCoupon" parameterType="Member">
+		DELETE
+		  FROM T_MCOUPON
+		 WHERE MEM_NO = #{memNo}
+	</delete>
+
+</mapper>

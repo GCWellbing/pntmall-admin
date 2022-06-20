@@ -1,0 +1,680 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Product">
+	<select id="list" parameterType="ProductSearch" resultType="Product">
+		<![CDATA[
+		SELECT A.PNO,
+			   A.MATNR,
+			   A.RANK,
+			   A.PNAME,
+			   A.CDATE,
+			   A.SALE_PRICE,
+			   A.INFO1,
+			   A.INFO2,
+			   A.INFO3,
+			   A.INFO4,
+			   A.INFO5,
+			   A.INFO6,
+			   A.INFO7,
+			   A.INFO8,
+			   A.INFO9,
+			   A.INFO10,
+			   A.INFO11,
+			   A.INFO12,
+			   A.INFO13,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		WHEN A.STATUS = 'E' THEN '단종'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   B.LABST,
+			   C.NAME BRAND_NAME,
+			   (SELECT NAME
+			      FROM T_PRODUCT_NUTRITION D, T_NUTRITION E
+			     WHERE D.NUTRITION_NO = E.NUTRITION_NO
+			       AND A.PNO = D.PNO
+			     ORDER BY RANK
+				 LIMIT 1) NUTRITION_NAME
+		  FROM T_PRODUCT A
+		  	   	LEFT OUTER JOIN T_SAP_PRODUCT B
+		  	   		ON A.MATNR = B.MATNR
+		  	   	LEFT OUTER JOIN T_CODE C
+		  	   		ON A.BRAND = CONCAT(C.CODE1, C.CODE2)
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(brand)">
+		   AND A.BRAND = #{brand}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(cateNo)">
+		   AND A.PNO IN (SELECT PNO FROM T_PRODUCT_CATEGORY WHERE CATE_NO = #{cateNo})
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(pno)">
+		   AND A.PNO = #{pno}
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@notEmpty(deliveryType) and deliveryType.equals("1")'>
+		   AND A.COLD_YN = 'Y'
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@notEmpty(deliveryType) and deliveryType.equals("2")'>
+		   AND A.ROUTINE_YN = 'Y'
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@notEmpty(deliveryType) and deliveryType.equals("3")'>
+		   AND A.CLINIC_PICKUP = 'Y'
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(matnr)">
+		   AND A.MATNR = #{matnr}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(pname)">
+		   AND A.PNAME LIKE CONCAT('%', #{pname}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(ptype)">
+		   AND A.PTYPE = #{ptype}
+		</if>
+		ORDER BY PNO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="ProductSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_PRODUCT A
+		  	   	LEFT OUTER JOIN T_SAP_PRODUCT B
+		  	   		ON A.MATNR = B.MATNR
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(brand)">
+		   AND A.BRAND = #{brand}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(cateNo)">
+		   AND A.PNO IN (SELECT PNO FROM T_PRODUCT_CATEGORY WHERE CATE_NO = #{cateNo})
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(pno)">
+		   AND A.PNO = #{pno}
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@notEmpty(deliveryType) and deliveryType.equals("1")'>
+		   AND A.COLD_YN = 'Y'
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@notEmpty(deliveryType) and deliveryType.equals("2")'>
+		   AND A.ROUTINE_YN = 'Y'
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@notEmpty(deliveryType) and deliveryType.equals("3")'>
+		   AND A.CLINIC_PICKUP = 'Y'
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(matnr)">
+		   AND A.MATNR = #{matnr}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(pname)">
+		   AND A.PNAME LIKE CONCAT('%', #{pname}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(ptype)">
+		   AND A.PTYPE = #{ptype}
+		</if>
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Product">
+		SELECT A.PNO,
+		       A.MATNR,
+		       A.PTYPE,
+		       A.REVIEW_YN,
+		       A.CLINIC_SETTLEMENT,
+		       A.SDATE,
+		       A.EDATE,
+		       A.SOLDOUT,
+		       A.STATUS,
+		       A.RANK,
+		       A.BRAND,
+		       A.PNAME,
+		       A.CAPA,
+		       A.DOSE_MONTH,
+		       A.SUBDIVISION,
+		       A.SUMMARY,
+		       A.PC_DESC,
+		       A.MO_DESC,
+		       A.SALE_PRICE,
+		       A.SUPPLY_PRICE,
+		       A.DISCOUNT_TYPE,
+		       A.ORG_IMG,
+		       A.IMG,
+		       A.IMG1,
+		       A.IMG2,
+		       A.IMG3,
+		       A.IMG4,
+		       A.IMG5,
+		       A.ROUTINE_YN,
+		       A.CLINIC_PICKUP,
+		       A.COLD_YN,
+		       A.INFO1,
+		       A.INFO2,
+		       A.INFO3,
+		       A.INFO4,
+		       A.INFO5,
+		       A.INFO6,
+		       A.INFO7,
+		       A.INFO8,
+		       A.INFO9,
+		       A.INFO10,
+		       A.INFO11,
+		       A.INFO12,
+		       A.INFO13,
+		       A.DOSAGE,
+		       A.DOSE_CNT,
+		       A.DOSE_METHOD,
+		       A.CUSER,
+		       A.CDATE,
+		       A.UUSER,
+		       A.UDATE,
+		       B.MAKTX,
+		       B.NETPR,
+		       <include refid="Common.userid">
+		       	<property name="alias" value="A" />
+		       </include>
+		  FROM T_PRODUCT A
+		  	   LEFT OUTER JOIN T_SAP_PRODUCT B
+		  	   	ON A.MATNR = B.MATNR
+		 WHERE A.PNO = #{pno}
+	</select>
+
+	<insert id="insert" parameterType="Product" useGeneratedKeys="true" keyProperty="pno" keyColumn="PNO">
+		INSERT INTO T_PRODUCT (
+			MATNR,
+			PTYPE,
+			REVIEW_YN,
+			CLINIC_SETTLEMENT,
+			SDATE,
+			EDATE,
+			SOLDOUT,
+			STATUS,
+			RANK,
+			BRAND,
+			PNAME,
+			CAPA,
+			DOSE_MONTH,
+			SUBDIVISION,
+			SUMMARY,
+			PC_DESC,
+			MO_DESC,
+			SALE_PRICE,
+			SUPPLY_PRICE,
+			DISCOUNT_TYPE,
+			ORG_IMG,
+			IMG,
+			IMG1,
+			IMG2,
+			IMG3,
+			IMG4,
+			IMG5,
+			ROUTINE_YN,
+			CLINIC_PICKUP,
+			COLD_YN,
+			INFO1,
+			INFO2,
+			INFO3,
+			INFO4,
+			INFO5,
+			INFO6,
+			INFO7,
+			INFO8,
+			INFO9,
+			INFO10,
+			INFO11,
+			INFO12,
+			INFO13,
+			DOSAGE,
+			DOSE_CNT,
+			DOSE_METHOD,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{matnr},
+			#{ptype},
+			#{reviewYn},
+			#{clinicSettlement},
+			#{sdate},
+			#{edate},
+			#{soldout},
+			#{status},
+			#{rank},
+			#{brand},
+			#{pname},
+			#{capa},
+			#{doseMonth},
+			#{subdivision},
+			#{summary},
+			#{pcDesc},
+			#{moDesc},
+			#{salePrice},
+			#{supplyPrice},
+			#{discountType},
+			#{orgImg},
+			#{img},
+			#{img1},
+			#{img2},
+			#{img3},
+			#{img4},
+			#{img5},
+			#{routineYn},
+			#{clinicPickup},
+			#{coldYn},
+			#{info1},
+			#{info2},
+			#{info3},
+			#{info4},
+			#{info5},
+			#{info6},
+			#{info7},
+			#{info8},
+			#{info9},
+			#{info10},
+			#{info11},
+			#{info12},
+			#{info13},
+			#{dosage},
+			#{doseCnt},
+			#{doseMethod},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+
+	<update id="update" parameterType="Product">
+		UPDATE T_PRODUCT
+		   SET PNO 					= #{pno},
+			   MATNR 				= #{matnr},
+			   PTYPE 				= #{ptype},
+			   REVIEW_YN 			= #{reviewYn},
+			   CLINIC_SETTLEMENT	= #{clinicSettlement},
+			   SDATE 				= #{sdate},
+			   EDATE 				= #{edate},
+			   SOLDOUT 				= #{soldout},
+			   STATUS 				= #{status},
+			   RANK					= #{rank},
+			   BRAND				= #{brand},
+			   PNAME 				= #{pname},
+			   CAPA 				= #{capa},
+			   DOSE_MONTH 			= #{doseMonth},
+			   SUBDIVISION 			= #{subdivision},
+			   SUMMARY 				= #{summary},
+			   PC_DESC 				= #{pcDesc},
+			   MO_DESC 				= #{moDesc},
+			   SALE_PRICE 			= #{salePrice},
+			   SUPPLY_PRICE			= #{supplyPrice},
+			   DISCOUNT_TYPE 		= #{discountType},
+			   ORG_IMG 				= #{orgImg},
+			   IMG 					= #{img},
+			   IMG1 				= #{img1},
+			   IMG2 				= #{img2},
+			   IMG3 				= #{img3},
+			   IMG4 				= #{img4},
+			   IMG5 				= #{img5},
+			   ROUTINE_YN 			= #{routineYn},
+			   CLINIC_PICKUP 		= #{clinicPickup},
+			   COLD_YN 				= #{coldYn},
+			   INFO1 				= #{info1},
+			   INFO2 				= #{info2},
+			   INFO3 				= #{info3},
+			   INFO4 				= #{info4},
+			   INFO5 				= #{info5},
+			   INFO6 				= #{info6},
+			   INFO7 				= #{info7},
+			   INFO8 				= #{info8},
+			   INFO9 				= #{info9},
+			   INFO10 				= #{info10},
+			   INFO11 				= #{info11},
+			   INFO12 				= #{info12},
+			   INFO13 				= #{info13},
+			   DOSAGE				= #{dosage},
+			   DOSE_CNT				= #{doseCnt},
+			   DOSE_METHOD			= #{doseMethod},
+			   UUSER 				= #{cuser},
+			   UDATE 				= NOW()
+		 WHERE PNO 					= #{pno}
+	</update>
+
+	<select id="sapList" parameterType="SapProductSearch" resultType="SapProduct">
+		SELECT MATNR,
+			   MAKTX,
+			   SPART,
+			   WERKS,
+			   LGORT,
+			   CHARG,
+			   PRDHA,
+			   LABST,
+			   MEINS,
+			   TEMPB,
+			   NETPR,
+			   MWSBP,
+			   WAERK
+		  FROM T_SAP_PRODUCT
+		 WHERE 1 = 1
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(matnr)">
+		   AND MATNR = LIKE CONCAT('%', #{matnr}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(maktx)">
+		   AND MAKTX LIKE CONCAT('%', #{maktx}, '%')
+		</if>
+		ORDER BY MATNR DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="sapCount" parameterType="SapProductSearch" resultType="java.lang.Integer">
+		SELECT COUNT(*)
+		  FROM T_SAP_PRODUCT
+		 WHERE 1 = 1
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(matnr)">
+		   AND MATNR = LIKE CONCAT('%', #{matnr}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(maktx)">
+		   AND MAKTX LIKE CONCAT('%', #{maktx}, '%')
+		</if>
+	</select>
+
+	<select id="gradeList" parameterType="java.lang.Integer" resultType="ProductGrade">
+		<![CDATA[
+		SELECT A.GRADE_NO,
+			   A.NAME GRADE_NAME,
+			   B.PNO
+		  FROM T_MEM_GRADE A
+		  	   LEFT OUTER JOIN T_PRODUCT_GRADE B
+		  	   	ON A.GRADE_NO = B.GRADE_NO
+		  	   		AND B.PNO = #{pno}
+		 WHERE A.STATUS <> 'D'
+		]]>
+	</select>
+
+	<delete id="deleteGrade" parameterType="java.lang.Integer">
+		DELETE FROM T_PRODUCT_GRADE
+		 WHERE PNO = #{pno}
+	</delete>
+
+	<insert id="insertGrade" parameterType="ProductGrade">
+		INSERT INTO T_PRODUCT_GRADE (
+			PNO,
+			GRADE_NO
+		) VALUES (
+			#{pno},
+			#{gradeNo}
+		)
+	</insert>
+
+	<select id="categoryList" parameterType="java.lang.Integer" resultType="ProductCategory">
+		SELECT A.PNO,
+			   A.CATE_NO,
+			   B.NAME CATE_NAME,
+			   C.NAME PCATE_NAME
+		  FROM T_PRODUCT_CATEGORY A
+		  	   INNER JOIN T_CATEGORY B
+		  	   	ON A.CATE_NO = B.CATE_NO
+		  	   INNER JOIN T_CATEGORY C
+		  	   	ON B.PCATE_NO = C.CATE_NO
+		 WHERE A.PNO = #{pno}
+	</select>
+
+	<delete id="deleteCategory" parameterType="java.lang.Integer">
+		DELETE FROM T_PRODUCT_CATEGORY
+		 WHERE PNO = #{pno}
+	</delete>
+
+	<insert id="insertCategory" parameterType="ProductCategory">
+		INSERT INTO T_PRODUCT_CATEGORY (
+			PNO,
+			CATE_NO
+		) VALUES (
+			#{pno},
+			#{cateNo}
+		)
+	</insert>
+
+	<select id="tagList" parameterType="java.lang.Integer" resultType="ProductTag">
+		SELECT PNO, TAG
+		  FROM T_PRODUCT_TAG
+		 WHERE PNO = #{pno}
+	</select>
+
+	<delete id="deleteTag" parameterType="java.lang.Integer">
+		DELETE FROM T_PRODUCT_TAG
+		 WHERE PNO = #{pno}
+	</delete>
+
+	<insert id="insertTag" parameterType="ProductTag">
+		INSERT INTO T_PRODUCT_TAG (
+			PNO,
+			TAG
+		) VALUES (
+			#{pno},
+			#{tag}
+		)
+	</insert>
+
+	<select id="iconList" parameterType="java.lang.Integer" resultType="ProductIcon">
+		<![CDATA[
+		SELECT A.ICON_NO,
+			   A.CONTENT,
+			   B.PNO
+		  FROM T_ICON A
+		  	   LEFT OUTER JOIN T_PRODUCT_ICON B
+		  	   	ON A.ICON_NO = B.ICON_NO
+		  	   		AND B.PNO = #{pno}
+		 WHERE A.STATUS <> 'D'
+		ORDER BY A.RANK
+		]]>
+	</select>
+
+	<delete id="deleteIcon" parameterType="java.lang.Integer">
+		DELETE FROM T_PRODUCT_ICON
+		 WHERE PNO = #{pno}
+	</delete>
+
+	<insert id="insertIcon" parameterType="ProductIcon">
+		INSERT INTO T_PRODUCT_ICON (
+			PNO,
+			ICON_NO
+		) VALUES (
+			#{pno},
+			#{iconNo}
+		)
+	</insert>
+
+	<select id="giftList" parameterType="java.lang.Integer" resultType="ProductGift">
+		SELECT A.PNO,
+			   A.GIFT_PNO,
+			   B.PNAME
+		  FROM T_PRODUCT_GIFT A
+		  	   INNER JOIN T_PRODUCT B
+		  		ON A.GIFT_PNO = B.PNO
+		 WHERE A.PNO = #{pno}
+	</select>
+
+	<delete id="deleteGift" parameterType="java.lang.Integer">
+		DELETE FROM T_PRODUCT_GIFT
+		 WHERE PNO = #{pno}
+	</delete>
+
+	<insert id="insertGift" parameterType="ProductGift">
+		INSERT INTO T_PRODUCT_GIFT (
+			PNO,
+			GIFT_PNO
+		) VALUES (
+			#{pno},
+			#{giftPno}
+		)
+	</insert>
+
+	<select id="intakeList" parameterType="java.lang.Integer" resultType="ProductIntake">
+		<![CDATA[
+		SELECT A.PNO,
+			   A.INTAKE_NO,
+			   A.RANK,
+			   B.CONTENT
+		  FROM T_PRODUCT_INTAKE A
+		  	   INNER JOIN T_INTAKE B
+		  	   	ON A.INTAKE_NO = B.INTAKE_NO
+		 WHERE A.PNO = #{pno}
+		   AND B.STATUS <> 'D'
+		ORDER BY A.RANK
+		]]>
+	</select>
+
+	<delete id="deleteIntake" parameterType="java.lang.Integer">
+		DELETE FROM T_PRODUCT_INTAKE
+		 WHERE PNO = #{pno}
+	</delete>
+
+	<insert id="insertIntake" parameterType="ProductIntake">
+		INSERT INTO T_PRODUCT_INTAKE (
+			PNO,
+			INTAKE_NO,
+			RANK
+		) VALUES (
+			#{pno},
+			#{intakeNo},
+			#{rank}
+		)
+	</insert>
+
+	<select id="doseList" parameterType="java.lang.Integer" resultType="ProductDose">
+		<![CDATA[
+		SELECT A.PNO,
+			   A.DOSE_NO,
+			   A.RANK,
+			   B.CONTENT
+		  FROM T_PRODUCT_DOSE A
+		  	   INNER JOIN T_DOSE B
+		  	   	ON A.DOSE_NO = B.DOSE_NO
+		 WHERE A.PNO = #{pno}
+		   AND B.STATUS <> 'D'
+		ORDER BY A.RANK
+		]]>
+	</select>
+
+	<delete id="deleteDose" parameterType="java.lang.Integer">
+		DELETE FROM T_PRODUCT_DOSE
+		 WHERE PNO = #{pno}
+	</delete>
+
+	<insert id="insertDose" parameterType="ProductDose">
+		INSERT INTO T_PRODUCT_DOSE (
+			PNO,
+			DOSE_NO,
+			RANK
+		) VALUES (
+			#{pno},
+			#{doseNo},
+			#{rank}
+		)
+	</insert>
+
+	<select id="nutritionList" parameterType="java.lang.Integer" resultType="ProductNutrition">
+		<![CDATA[
+		SELECT A.PNO,
+			   A.NUTRITION_NO,
+			   A.STANDARD,
+			   A.CONTENT,
+			   A.RANK,
+			   B.NAME NUTRITION_NAME,
+			   B.FUNC,
+			   B.UNIT,
+			   C.NAME UNIT_NAME
+		  FROM T_PRODUCT_NUTRITION A
+		  	   INNER JOIN T_NUTRITION B
+		  	   	ON A.NUTRITION_NO = B.NUTRITION_NO
+		  	   INNER JOIN T_CODE C
+		  	   	ON B.UNIT = CONCAT(C.CODE1, C.CODE2)
+		 WHERE A.PNO = #{pno}
+		   AND B.STATUS <> 'D'
+		ORDER BY A.RANK
+		]]>
+	</select>
+
+	<delete id="deleteNutrition" parameterType="java.lang.Integer">
+		DELETE FROM T_PRODUCT_NUTRITION
+		 WHERE PNO = #{pno}
+	</delete>
+
+	<insert id="insertNutrition" parameterType="ProductNutrition">
+		INSERT INTO T_PRODUCT_NUTRITION (
+			PNO,
+			NUTRITION_NO,
+			STANDARD,
+			CONTENT,
+			RANK
+		) VALUES (
+			#{pno},
+			#{nutritionNo},
+			#{standard},
+			#{content},
+			#{rank}
+		)
+	</insert>
+
+	<select id="optionList" parameterType="java.lang.Integer" resultType="ProductOption">
+		SELECT A.PNO,
+			   A.OPT_PNO,
+			   A.OPT_NM,
+			   A.RANK,
+			   B.PNAME,
+			   B.SALE_PRICE
+		  FROM T_PRODUCT_OPT A
+		  	   INNER JOIN T_PRODUCT B
+		  	   	ON A.OPT_PNO = B.PNO
+		 WHERE A.PNO = #{pno}
+		ORDER BY A.RANK
+	</select>
+
+	<delete id="deleteOption" parameterType="java.lang.Integer">
+		DELETE FROM T_PRODUCT_OPT
+		 WHERE PNO = #{pno}
+	</delete>
+
+	<insert id="insertOption" parameterType="ProductOption">
+		INSERT INTO T_PRODUCT_OPT (
+			PNO,
+			OPT_PNO,
+			OPT_NM,
+			RANK
+		) VALUES (
+			#{pno},
+			#{optPno},
+			#{optNm},
+			#{rank}
+		)
+	</insert>
+
+	<select id="discountList" parameterType="java.lang.Integer" resultType="ProductDiscount">
+		<![CDATA[
+		SELECT A.GRADE_NO,
+			   A.NAME GRADE_NAME,
+			   B.DISCOUNT
+		  FROM T_MEM_GRADE A
+		  	   LEFT OUTER JOIN T_PRODUCT_DISCOUNT B
+		  	   	ON A.GRADE_NO = B.GRADE_NO
+		  	   		AND B.PNO = #{pno}
+		 WHERE A.STATUS <> 'D'
+		]]>
+	</select>
+
+	<delete id="deleteDiscount" parameterType="java.lang.Integer">
+		DELETE FROM T_PRODUCT_DISCOUNT
+		 WHERE PNO = #{pno}
+	</delete>
+
+	<insert id="insertDiscount" parameterType="ProductDiscount">
+		INSERT INTO T_PRODUCT_DISCOUNT (
+			PNO,
+			GRADE_NO,
+			DISCOUNT
+		) VALUES (
+			#{pno},
+			#{gradeNo},
+			#{discount}
+		)
+	</insert>
+
+</mapper>

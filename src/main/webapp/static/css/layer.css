@@ -1,0 +1,66 @@
+@CHARSET "EUC-KR";
+
+/* Layer Popup [*/
+.layerpopwrap {
+    position:absolute; z-index:33;
+    padding:20px !important;
+    width:570px;
+    height:510px;
+    border:1px solid #bbb;
+    background:#fff;
+    top:292px; left:264px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.7);
+}
+
+.penaltyLayerpopwrap {
+    position:absolute; z-index:33;
+    padding:20px !important;
+    width:570px;
+    height:620px;
+    border:1px solid #bbb;
+    background:#fff;
+    top:292px; left:264px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.7);
+}
+
+
+.layerpopwrap.send {height:464px !important;}
+.layerpopwrap .layer-header {margin:10px; font-size:14px; text-align:left; font-weight:bold}
+.layerpopwrap>table { width:100%; border:1px solid #ccc;}
+.layerpopwrap>table th {border-right:1px solid #ccc; border-bottom:1px solid #ccc;background:#ddd;}
+.layerpopwrap>table td {vertical-align: top; padding:10px;border-bottom:1px solid #ccc; text-align:left; word-break:break-all;}
+.layerpopwrap>table td input[type=text]{width:94%;}
+.layerpopwrap>table td textarea{width:94%; height:230px;}
+.layerpopwrap>table td.txt {height:290px;}
+
+.layerpopwrap>.btnColse {position:absolute; top:0; right:0; height:88px;}
+.layerpopwrap>.btnColse img {margin-top:29px;}
+.layerpopwrap>.bntComm {display:inline-block; width:88px; height:88px;  color:#ccc; text-align:center;}
+.layerpopwrap>.bntComm div {display:block; line-height:18px;}
+
+.penaltyLayerpopwrap .layer-header {margin:10px; font-size:14px; text-align:left; font-weight:bold}
+.penaltyLayerpopwrap>table { width:100%; border:1px solid #ccc;}
+.penaltyLayerpopwrap>table th {border-right:1px solid #ccc; border-bottom:1px solid #ccc;background:#ddd;padding:8px 0;}
+.penaltyLayerpopwrap>table td {border-left:1px solid #ccc; padding:10px;border-bottom:1px solid #ccc; text-align:left; word-break:break-all;}
+.penaltyLayerpopwrap>table td input[type=text]{width:94%;}
+.penaltyLayerpopwrap>table td textarea{width:94%; height:230px;}
+.penaltyLayerpopwrap>table td.txt {display:block; height:290px; overflow-y:scroll;}
+
+.penaltyLayerpopwrap>.btnColse {position:absolute; top:0; right:0; height:88px;}
+.penaltyLayerpopwrap>.btnColse img {margin-top:29px;}
+.penaltyLayerpopwrap>.bntComm {display:inline-block; width:88px; height:88px;  color:#ccc; text-align:center;}
+.penaltyLayerpopwrap>.bntComm div {display:block; line-height:18px;}
+
+.penaltyLayerpopwrap ul {margin-left:6px;}
+.penaltyLayerpopwrap ul li {text-align:left; padding:5px;}
+.penaltyLayerpopwrap ul li input {margin-right:5px;}
+.penaltyLayerpopwrap .penalty-layer-header {padding-top:10px; margin:10px; font-size:14px; text-align:left; font-weight:bold; border-top:1px solid #ccc;}
+
+.penaltyBtn {margin-top:40px; text-align:right;}
+
+#gradeInfo {position:relative; padding-left:80px; height:80px;}
+#gradeInfo .photo {position:absolute; left:0; top:0; border:1px solid #ccc; width:60px; height:60px; background:#fff;}
+#gradeInfo .infoTxt {text-align:left;}
+#gradeInfo .infoTxt p {font-size:14px; font-weight:bold}
+#gradeInfo .infoTxt p span {margin-left:10px;font-size:12px; font-weight:normal;}
+#gradeInfo .infoTxt select {margin-top:10px; text-align:left !important;}

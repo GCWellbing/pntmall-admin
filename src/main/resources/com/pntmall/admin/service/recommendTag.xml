@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="RecommendTag">
+	<select id="list" resultType="RecommendTag">
+		<![CDATA[
+		SELECT TNO,
+			   TAG,
+			   RANK,
+			   STATUS,
+			   CASE WHEN STATUS = 'S' THEN '활성'
+			   		ELSE '비활성' END AS STATUS_NAME
+		  FROM T_RECOMMEND_TAG
+		 WHERE STATUS <> 'D'
+		ORDER BY rank
+		]]>
+	</select>
+
+
+	<select id="info" parameterType="RecommendTag" resultType="RecommendTag">
+		SELECT TNO,
+			   TAG,
+			   RANK,
+			   STATUS,
+			   CASE WHEN STATUS = 'S' THEN '활성'
+			   		ELSE '비활성' END AS STATUS_NAME
+		  FROM T_RECOMMEND_TAG
+		 WHERE TNO = #{tno}
+	</select>
+
+	<insert id="insert" parameterType="RecommendTag">
+		INSERT INTO T_RECOMMEND_TAG (
+			TAG,
+			RANK,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{tag},
+			0,
+			#{status},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+
+	<update id="update" parameterType="RecommendTag">
+		UPDATE T_RECOMMEND_TAG
+		   SET TAG			= #{tag},
+		   	   RANK			= #{rank},
+		   	   STATUS		= #{status},
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE TNO		    = #{tno}
+	</update>
+
+	<update id="updateRank" parameterType="RecommendTag">
+		UPDATE T_RECOMMEND_TAG
+		   SET RANK			= #{rank},
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE TNO		    = #{tno}
+	</update>
+
+	<update id="delete" parameterType="RecommendTag">
+		UPDATE T_RECOMMEND_TAG
+		   SET STATUS		= 'D',
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE TNO		    = #{tno}
+	</update>
+</mapper>

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="PopUp">
+    <select id="list" parameterType="PopUpSearch" resultType="PopUp">
+        <![CDATA[
+        SELECT A.POPUPID,
+               A.TYPE,
+               CASE WHEN A.TYPE = 1 THEN '상단띠배너'
+                    ELSE '전면팝업' END AS TYPENAME,
+               A.TITLE,
+               A.SDATE,
+               A.EDATE,
+               A.PC_IMG,
+               A.PC_IMG_ALT,
+               A.MO_IMG,
+               A.MO_IMG_ALT,
+               A.REBON_IMG,
+               A.REBON_IMG_ALT,
+               A.URL,
+               A.DISPLAY_GRADE_STATUS,
+               A.DISPLAY_GRADE,
+               A.STATUS,
+               CASE WHEN A.STATUS = 'S' THEN '공개'
+                    ELSE '비공개' END AS STATUSNAME,
+               A.CUSER,
+               A.CDATE,
+               A.UUSER,
+               A.UDATE,
+               A.TARGET
+          FROM T_POPUP A
+         WHERE A.STATUS <> 'D'
+        ]]>
+        <if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+            AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+        </if>
+        <if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+            AND A.STATUS = #{status}
+        </if>
+        <if test="@com.pntmall.common.mybatis.Check@notEmpty(type)">
+            AND A.TYPE = #{type}
+        </if>
+        <if test="@com.pntmall.common.mybatis.Check@notEmpty(edate)">
+            <![CDATA[
+		   AND A.EDATE >= #{edate}
+	    ]]>
+        </if>
+        <if test="@com.pntmall.common.mybatis.Check@notEmpty(sdate)">
+            <![CDATA[
+		   AND A.SDATE <= #{sdate}
+	    ]]>
+        </if>
+        ORDER BY A.POPUPID DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="count" parameterType="PopUpSearch" resultType="java.lang.Integer">
+        <![CDATA[
+        SELECT COUNT(*)
+          FROM T_POPUP A
+         WHERE A.STATUS <> 'D'
+        ]]>
+        <if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+            AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+        </if>
+        <if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+            AND A.STATUS = #{status}
+        </if>
+        <if test="@com.pntmall.common.mybatis.Check@notEmpty(type)">
+            AND A.TYPE = #{type}
+        </if>
+    </select>
+
+    <select id="info" parameterType="java.lang.Integer" resultType="PopUp">
+        SELECT A.POPUPID,
+               A.TYPE,
+               CASE WHEN A.TYPE = 1 THEN '상단띠배너'
+                    ELSE '전면팝업' END AS TYPENAME,
+               A.TITLE,
+               A.SDATE,
+               A.EDATE,
+               A.PC_IMG,
+               A.PC_IMG_ALT,
+               A.MO_IMG,
+               A.MO_IMG_ALT,
+               A.REBON_IMG,
+               A.REBON_IMG_ALT,
+               A.URL,
+               A.DISPLAY_GRADE_STATUS,
+               A.DISPLAY_GRADE,
+               A.STATUS,
+               CASE WHEN A.STATUS = 'S' THEN '공개'
+                    ELSE '비공개' END AS STATUSNAME,
+               A.CUSER,
+               A.CDATE,
+               A.UUSER,
+               A.UDATE,
+               A.TARGET,
+               A.BACKGROUND_COLOR,
+               A.FONT_COLOR
+        FROM T_POPUP A
+       WHERE POPUPID = #{popupid}
+    </select>
+
+    <insert id="insert" parameterType="PopUp">
+        INSERT INTO T_POPUP (
+            TYPE,
+            TITLE,
+            SDATE,
+            EDATE,
+            PC_IMG,
+            PC_IMG_ALT,
+            MO_IMG,
+            MO_IMG_ALT,
+            REBON_IMG,
+            REBON_IMG_ALT,
+            URL,
+            DISPLAY_GRADE_STATUS,
+            DISPLAY_GRADE,
+            STATUS,
+            CUSER,
+            CDATE,
+            UUSER,
+            UDATE,
+            TARGET,
+            BACKGROUND_COLOR,
+            FONT_COLOR
+        ) VALUES (
+             #{type},
+             #{title},
+             #{sdate},
+             #{edate},
+             #{pcImg},
+             #{pcImgAlt},
+             #{moImg},
+             #{moImgAlt},
+             #{rebonImg},
+             #{rebonImgAlt},
+             #{url},
+             #{displayGradeStatus},
+             #{displayGrade},
+             #{status},
+             #{cuser},
+             NOW(),
+             #{cuser},
+             NOW(),
+             #{target},
+             #{backgroundColor},
+             #{fontColor}
+         )
+    </insert>
+
+
+    <update id="update" parameterType="PopUp">
+        UPDATE T_POPUP
+           SET TYPE                 = #{type},
+               TITLE                = #{title},
+               SDATE                = #{sdate},
+               EDATE                = #{edate},
+               PC_IMG               = #{pcImg},
+               PC_IMG_ALT           = #{pcImgAlt},
+               MO_IMG               = #{moImg},
+               MO_IMG_ALT           = #{moImgAlt},
+               REBON_IMG            = #{rebonImg},
+               REBON_IMG_ALT        = #{rebonImgAlt},
+               URL                  = #{url},
+               DISPLAY_GRADE_STATUS = #{displayGradeStatus},
+               DISPLAY_GRADE        = #{displayGrade},
+               STATUS               = #{status},
+               UUSER                = #{cuser},
+               UDATE                = NOW(),
+               TARGET               = #{target},
+               BACKGROUND_COLOR     = #{backgroundColor},
+               FONT_COLOR           = #{fontColor}
+         WHERE POPUPID = #{popupid}
+    </update>
+
+</mapper>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="AgreeDocu">
+
+	<select id="info" resultType="AgreeDocu">
+		SELECT A.AD_NO,
+			   A.ATTACH,
+			   A.ATTACH_ORG_NAME,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_AGREEDOCU A
+		 ORDER BY A.AD_NO DESC
+		 LIMIT 1
+	</select>
+
+	<insert id="insert" parameterType="AgreeDocu">
+		INSERT
+		  INTO T_AGREEDOCU (
+			   ATTACH,
+			   ATTACH_ORG_NAME,
+			   CUSER,
+			   CDATE,
+			   UUSER,
+			   UDATE
+		) VALUES (
+			   #{attach},
+			   #{attachOrgName},
+			   #{cuser},
+			   NOW(),
+			   #{cuser},
+			   NOW()
+		)
+	</insert>
+
+</mapper>

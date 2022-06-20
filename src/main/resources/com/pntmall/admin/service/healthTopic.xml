@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="HealthTopic">
+    <select id="list" resultType="HealthTopic">
+		<![CDATA[
+        SELECT HEALTH_NO,
+               TITLE,
+               IMG,
+               TYPE,
+               F_CODE_NAME('023', TYPE) TYPE_NAME,
+               RANK,
+               STATUS,
+               CASE
+                   WHEN STATUS = 'S' THEN '활성'
+                   ELSE '비활성' END AS    STATUS_NAME,
+               CDATE,
+               UDATE
+        FROM t_health_topic WHERE STATUS <> 'D'
+        ORDER BY TYPE, RANK
+        ]]>
+	</select>
+
+    <select id="info" parameterType="java.lang.Integer" resultType="HealthTopic">
+        SELECT HEALTH_NO,
+               TITLE,
+               IMG,
+               TYPE,
+               F_CODE_NAME('023', TYPE) TYPE_NAME,
+               RANK,
+               STATUS
+        FROM t_health_topic
+        WHERE HEALTH_NO = #{healthNo}
+    </select>
+
+    <insert id="insert" parameterType="HealthTopic">
+        INSERT INTO t_health_topic (HEALTH_NO,
+                                    TITLE,
+                                    IMG,
+                                    TYPE,
+                                    RANK,
+                                    STATUS,
+                                    CUSER,
+                                    CDATE,
+                                    UUSER,
+                                    UDATE)
+        VALUES (#{healthNo},
+                #{title},
+                #{img},
+                #{type},
+                #{rank},
+                #{status},
+                #{cuser},
+                NOW(),
+                #{cuser},
+                NOW())
+    </insert>
+
+    <update id="update" parameterType="HealthTopic">
+        UPDATE t_health_topic
+        SET TITLE  = #{title},
+            IMG    = #{img},
+            TYPE   = #{type},
+            RANK   = #{rank},
+            STATUS = #{status},
+            UUSER  = #{cuser},
+            UDATE  = NOW()
+        WHERE HEALTH_NO = #{healthNo}
+    </update>
+
+    <update id="updateRank" parameterType="HealthTopic">
+        UPDATE t_health_topic
+        SET RANK  = #{rank},
+            UUSER = #{cuser},
+            UDATE = NOW()
+        WHERE HEALTH_NO = #{healthNo}
+    </update>
+
+    <update id="delete" parameterType="HealthTopic">
+        UPDATE t_health_topic
+        SET STATUS = 'D',
+            UUSER  = #{cuser},
+            UDATE  = NOW()
+        WHERE HEALTH_NO = #{healthNo}
+    </update>
+
+</mapper>

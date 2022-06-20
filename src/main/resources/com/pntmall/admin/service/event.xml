@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Event">
+    <select id="list" parameterType="EventSearch" resultType="Event">
+       SELECT A.EVENT_ID,
+              A.NAME,
+              A.SDATE,
+              A.EDATE
+         FROM T_EVENT A
+        WHERE A.EVENT_ID IS NOT NULL
+        <if test="@com.pntmall.common.mybatis.Check@notEmpty(sdate)">
+            <![CDATA[
+		   AND A.SDATE <= #{sdate}
+		   	]]>
+        </if>
+        <if test="@com.pntmall.common.mybatis.Check@notEmpty(edate)">
+            <![CDATA[
+		   AND A.SDATE >= #{edate}
+		   	]]>
+        </if>
+        <if test="@com.pntmall.common.mybatis.Check@notEmpty(name)">
+            <![CDATA[
+            AND A.NAME LIKE CONCAT('%', #{name}, '%')
+            ]]>
+        </if>
+    </select>
+
+    <select id="count" parameterType="EventSearch" resultType="java.lang.Integer">
+        <![CDATA[
+        SELECT COUNT(*)
+          FROM T_EVENT A
+         WHERE A.EVENT_ID IS NOT NULL
+        ]]>
+        <if test="@com.pntmall.common.mybatis.Check@notEmpty(sdate)">
+            <![CDATA[
+		   AND A.SDATE <= #{sdate}
+		   	]]>
+        </if>
+        <if test="@com.pntmall.common.mybatis.Check@notEmpty(edate)">
+            <![CDATA[
+		   AND A.SDATE >= #{edate}
+		   	]]>
+        </if>
+        <if test="@com.pntmall.common.mybatis.Check@notEmpty(name)">
+            <![CDATA[
+            AND A.NAME LIKE CONCAT('%', #{name}, '%')
+            ]]>
+        </if>
+    </select>
+
+    <select id="info" parameterType="java.lang.Integer" resultType="Event">
+        SELECT *
+          FROM T_EVENT
+         WHERE EVENT_ID = #{eventId}
+    </select>
+
+    <select id="itemList" parameterType="java.lang.Integer" resultType="EventItem">
+        SELECT *
+          FROM T_EVENT_ITEM
+         WHERE EVENT_ID = #{eventId}
+      ORDER BY RANK
+    </select>
+
+    <update id="updateItemQty" parameterType="EventItem">
+        UPDATE T_EVENT_ITEM
+           SET QTY = #{qty}
+         WHERE ITEM_ID = #{itemId}
+    </update>
+
+    <update id="reset">
+        UPDATE T_MEMBER
+           SET EVENT_CNT = 1
+         WHERE STATUS = 'S'
+    </update>
+
+    <insert id="insertLog" parameterType="EventLog">
+        INSERT INTO T_EVENT_LOG (
+            EVENT_ID,
+            MEM_NO,
+            ITEM_ID,
+            CDATE
+        ) VALUES (
+            #{eventId},
+            #{memNo},
+            #{itemId},
+            now()
+        )
+    </insert>
+
+</mapper>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Stipulation">
+	<select id="list" parameterType="StipulationSearch" resultType="Stipulation">
+		<![CDATA[
+		SELECT A.STIPULATION_NO,
+			   A.GUBUN,
+			   A.TITLE,
+			   A.CONTENT,
+			   A.STATUS,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME
+		  FROM T_STIPULATION A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gubun)">
+		   AND A.GUBUN = #{gubun}
+		</if>
+
+		ORDER BY A.STIPULATION_NO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="StipulationSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_STIPULATION A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gubun)">
+		   AND A.GUBUN = #{gubun}
+		</if>
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Stipulation">
+		SELECT STIPULATION_NO,
+			   GUBUN,
+			   TITLE,
+			   CONTENT,
+			   STATUS,
+			   CUSER,
+			   CDATE,
+			   UUSER,
+			   UDATE
+		  FROM T_STIPULATION
+		 WHERE STIPULATION_NO = #{stipulationNo}
+	</select>
+
+
+	<insert id="insert" parameterType="Stipulation">
+		INSERT INTO T_STIPULATION (
+			GUBUN,
+			TITLE,
+			CONTENT,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{gubun},
+			#{title},
+			#{content},
+			#{status},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+
+	<update id="update" parameterType="Stipulation">
+		UPDATE T_STIPULATION
+		   SET GUBUN		= #{gubun},
+			   TITLE		= #{title},
+			   CONTENT		= #{content},
+			   STATUS		= #{status},
+			   UUSER		= #{cuser},
+			   UDATE		= NOW()
+		 WHERE STIPULATION_NO	= #{stipulationNo}
+	</update>
+
+</mapper>

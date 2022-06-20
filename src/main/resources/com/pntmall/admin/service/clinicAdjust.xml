@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ClinicAdjust">
+	<insert id="insert" parameterType="ClinicAdjustSearch">
+		<![CDATA[
+		INSERT INTO T_CLINIC_ADJUST (
+			YEAR,
+			QUARTER,
+			MEM_NO,
+			ORDER_CNT,
+			TOT_SALE_AMT,
+			SALE_AMT,
+			PICKUP_SALE_AMT,
+			DPACK_SALE_AMT,
+			TOT_SUPPLY_AMT,
+			ADJUST_AMT,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		)
+		SELECT #{year},
+			   #{quarter},
+			   A.CLINIC_MEM_NO,
+			   COUNT(DISTINCT A.ORDERID),
+			   SUM(IF(A.STATUS = '380', B.SALE_PRICE * -1, B.SALE_PRICE)),
+			   SUM(IF(A.ORDER_GUBUN = 1 OR A.ORDER_GUBUN = 2, IF(A.STATUS = '380', B.SALE_PRICE * -1, B.SALE_PRICE), 0)),
+			   SUM(IF(A.ORDER_GUBUN = 3, IF(A.STATUS = '380', B.SALE_PRICE * -1, B.SALE_PRICE), 0)),
+			   SUM(IF(A.ORDER_GUBUN = 4, IF(A.STATUS = '380', B.SALE_PRICE * -1, B.SALE_PRICE), 0)),
+		       SUM(C.SUPPLY_PRICE * B.QTY * IF(A.STATUS = '380', -1, 1)),
+		       0,
+		       10,
+		       #{cuser},
+		       NOW(),
+		       #{cuser},
+		       NOW()
+		  FROM T_ORDER A
+				INNER JOIN T_ORDER_ITEM B
+					ON A.ORDERID = B.ORDERID
+				INNER JOIN T_PRODUCT C
+					ON B.PNO = C.PNO
+				INNER JOIN T_CLINIC D
+					ON A.CLINIC_MEM_NO = D.MEM_NO
+		 WHERE (
+				A.STATUS = '180'
+				AND A.STATUS IN (SELECT STATUS FROM T_ORDER_STATUS_CODE WHERE ORDER_TYPE = 1)
+				AND A.ORDERID IN (SELECT ORDERID FROM T_ORDER_STATUS_LOG
+								   WHERE ORDERID = A.ORDERID
+								     AND STATUS = '180'
+                                     AND CDATE >= STR_TO_DATE(CONCAT(#{year}, LPAD((#{quarter} - 1) * 3 + 1, 2, 0), '01'), '%Y%m%d')
+									 AND CDATE < DATE_ADD(STR_TO_DATE(CONCAT(#{year}, LPAD((#{quarter} - 1) * 3 + 1, 2, 0), '01'), '%Y%m%d'), INTERVAL 3 MONTH))
+			   )
+			OR (
+				A.STATUS = '380'
+				AND A.ORDERID IN (SELECT ORDERID FROM T_ORDER_STATUS_LOG
+								   WHERE ORDERID = A.ORDERID
+								     AND STATUS = '380'
+                                     AND CDATE >= STR_TO_DATE(CONCAT(#{year}, LPAD((#{quarter} - 1) * 3 + 1, 2, 0), '01'), '%Y%m%d')
+									 AND CDATE < DATE_ADD(STR_TO_DATE(CONCAT(#{year}, LPAD((#{quarter} - 1) * 3 + 1, 2, 0), '01'), '%Y%m%d'), INTERVAL 3 MONTH))
+			   )
+		GROUP BY A.CLINIC_MEM_NO
+		]]>
+	</insert>
+
+	<select id="list" parameterType="ClinicAdjustSearch" resultType="ClinicAdjust">
+		SELECT A.SNO,
+			   A.YEAR,
+			   A.QUARTER,
+			   A.MEM_NO,
+			   A.TOT_SALE_AMT,
+			   A.SALE_AMT,
+			   A.PICKUP_SALE_AMT,
+			   A.DPACK_SALE_AMT,
+			   A.TOT_SUPPLY_AMT,
+			   A.FEE,
+			   A.PROMO_FEE,
+			   A.PICKUP_FEE,
+			   A.DPACK_FEE,
+			   A.ADJUST_AMT,
+			   A.STATUS,
+			   A.DEADLINE,
+			   A.PAYMENT_DATE,
+			   A.SAP_RESULT,
+			   B.CLINIC_NAME,
+			   C.MEM_ID
+	      FROM T_CLINIC_ADJUST A
+	      		INNER JOIN T_CLINIC B
+	      			ON A.MEM_NO = B.MEM_NO
+	      		INNER JOIN T_MEMBER C
+	      			ON A.MEM_NO = C.MEM_NO
+	     WHERE 1 = 1
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(year)">
+	       AND A.YEAR = #{year}
+	    </if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(quarter)">
+	       AND A.QUARTER = #{quarter}
+	    </if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(year1)">
+		   AND CONCAT(A.YEAR, A.QUARTER) >= CONCAT(#{year1}, #{quarter1})
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(year2)">
+		<![CDATA[
+		   AND CONCAT(A.YEAR, A.QUARTER) <= CONCAT(#{year2}, #{quarter2})
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memId)">
+		   AND C.MEM_ID LIKE CONCAT('%', #{memId}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicName)">
+		   AND B.CLINIC_NAME LIKE CONCAT('%', #{clinicName}, '%')
+		</if>
+		ORDER BY A.SNO
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="ClinicAdjustSearch" resultType="java.lang.Integer">
+		SELECT COUNT(*)
+	      FROM T_CLINIC_ADJUST A
+	      		INNER JOIN T_CLINIC B
+	      			ON A.MEM_NO = B.MEM_NO
+	      		INNER JOIN T_MEMBER C
+	      			ON A.MEM_NO = C.MEM_NO
+	     WHERE 1 = 1
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(year)">
+	       AND A.YEAR = #{year}
+	    </if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(quarter)">
+	       AND A.QUARTER = #{quarter}
+	    </if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(year1)">
+		   AND CONCAT(A.YEAR, A.QUARTER) >= CONCAT(#{year1}, #{quarter1})
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(year2)">
+		<![CDATA[
+		   AND CONCAT(A.YEAR, A.QUARTER) <= CONCAT(#{year2}, #{quarter2})
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memId)">
+		   AND C.MEM_ID LIKE CONCAT('%', #{memId}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicName)">
+		   AND B.CLINIC_NAME LIKE CONCAT('%', #{clinicName}, '%')
+		</if>
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="ClinicAdjust">
+		SELECT A.SNO,
+			   A.YEAR,
+			   A.QUARTER,
+			   A.MEM_NO,
+			   A.TOT_SALE_AMT,
+			   A.SALE_AMT,
+			   A.PICKUP_SALE_AMT,
+			   A.DPACK_SALE_AMT,
+			   A.TOT_SUPPLY_AMT,
+			   A.FEE,
+			   A.PROMO_FEE,
+			   A.PICKUP_FEE,
+			   A.DPACK_FEE,
+			   A.ADJUST_AMT,
+			   A.STATUS,
+			   A.DEADLINE,
+			   A.PAYMENT_DATE,
+			   A.SAP_RESULT,
+			   B.CLINIC_NAME,
+			   B.ALARM_TEL1,
+			   B.ALARM_TEL2
+	      FROM T_CLINIC_ADJUST A
+	      		INNER JOIN T_CLINIC B
+	      			ON A.MEM_NO = B.MEM_NO
+	     WHERE SNO = #{sno}
+	</select>
+	
+	<update id="updateFee" parameterType="ClinicAdjust">
+		UPDATE T_CLINIC_ADJUST
+		   SET TOT_SUPPLY_AMT	= #{totSupplyAmt},
+		   	   FEE				= #{fee},
+		   	   PROMO_FEE		= #{promoFee},
+		   	   PICKUP_FEE		= #{pickupFee},
+		   	   DPACK_FEE		= #{dpackFee},
+		   	   ADJUST_AMT		= TOT_SALE_AMT - #{totSupplyAmt} - (TOT_SALE_AMT * #{fee} / 100) - (TOT_SALE_AMT * (100 - #{promoFee}) / 100) + (PICKUP_SALE_AMT * #{pickupFee} / 100) + (DPACK_SALE_AMT * #{dpackFee} / 100),
+		   	   UUSER			= #{cuser},
+		   	   UDATE			= NOW()
+		 WHERE SNO				= #{sno}
+	</update>
+
+	<update id="updateStatus" parameterType="ClinicAdjust">
+		UPDATE T_CLINIC_ADJUST
+		   SET STATUS		= #{status},
+		<if test="@com.pntmall.common.mybatis.Check@equals(status, 20) or @com.pntmall.common.mybatis.Check@equals(status, 30) or @com.pntmall.common.mybatis.Check@equals(status, 40)">
+			   DEADLINE		= #{deadline},
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@equals(status, 70)">
+			   PAYMENT_DATE	= #{deadline},
+		</if>
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE SNO			= #{sno}
+	</update>
+
+	<insert id="insertStatusLog" parameterType="ClinicAdjust">
+		INSERT INTO T_CLINIC_ADJUST_STATUS_LOG (
+			SNO,
+			STATUS,
+			CUSER,
+			CDATE
+		) VALUES (
+			#{sno},
+			#{status},
+			#{cuser},
+			NOW()
+		)
+	</insert>
+
+	<select id="detailList" parameterType="ClinicAdjust" resultType="ClinicAdjustDetail">
+		<![CDATA[
+		SELECT A.ORDERID,
+			   A.GUBUN,
+		       A.ORDER_GUBUN,
+		       A.POINT,
+		       A.SHIP_AMT,
+		       A.TOT_DISCOUNT,
+		       A.PAY_AMT,
+			   A.STATUS,
+		       B.BO_NAME,
+		       (SELECT PNAME FROM T_ORDER_ITEM WHERE ORDERID = A.ORDERID LIMIT 1) PNAME,
+		       (SELECT COUNT(*) FROM T_ORDER_ITEM WHERE ORDERID = A.ORDERID) ITEM_CNT,
+		       (SELECT SUM(QTY) FROM T_ORDER_ITEM WHERE ORDERID = A.ORDERID) ITEM_QTY,
+		       (SELECT SUM(P.SUPPLY_PRICE * I.QTY)
+		          FROM T_ORDER_ITEM I
+						INNER JOIN T_PRODUCT P
+							ON I.PNO = P.PNO
+				 WHERE I.ORDERID = A.ORDERID) SUPPLY_AMT,
+			   (SELECT SUM(SALE_PRICE) FROM T_ORDER_ITEM WHERE ORDERID = A.ORDERID) SALE_AMT,
+		       (SELECT MIN(CDATE) FROM T_ORDER_STATUS_LOG WHERE ORDERID = A.ORDERID AND STATUS = '180') CONFIRM_DATE,
+		       (SELECT MIN(CDATE) FROM T_ORDER_STATUS_LOG WHERE ORDERID = A.ORDERID AND STATUS = '380') RETURN_DATE
+		  FROM T_ORDER A
+				INNER JOIN T_ORDER_STATUS_CODE B
+					ON A.STATUS = B.STATUS
+		 WHERE A.CLINIC_MEM_NO = #{memNo}
+		   AND ((
+				A.STATUS = '180'
+				AND A.STATUS IN (SELECT STATUS FROM T_ORDER_STATUS_CODE WHERE ORDER_TYPE = 1)
+				AND A.ORDERID IN (SELECT ORDERID FROM T_ORDER_STATUS_LOG
+								   WHERE ORDERID = A.ORDERID
+								     AND STATUS = '180'
+                                     AND CDATE >= STR_TO_DATE(CONCAT(#{year}, LPAD((#{quarter} - 1) * 3 + 1, 2, 0), '01'), '%Y%m%d')
+									 AND CDATE < DATE_ADD(STR_TO_DATE(CONCAT(#{year}, LPAD((#{quarter} - 1) * 3 + 1, 2, 0), '01'), '%Y%m%d'), INTERVAL 3 MONTH))
+			   )
+			   OR
+			   (
+				A.STATUS = '380'
+				AND A.ORDERID IN (SELECT ORDERID FROM T_ORDER_STATUS_LOG
+								   WHERE ORDERID = A.ORDERID
+								     AND STATUS = '380'
+                                     AND CDATE >= STR_TO_DATE(CONCAT(#{year}, LPAD((#{quarter} - 1) * 3 + 1, 2, 0), '01'), '%Y%m%d')
+									 AND CDATE < DATE_ADD(STR_TO_DATE(CONCAT(#{year}, LPAD((#{quarter} - 1) * 3 + 1, 2, 0), '01'), '%Y%m%d'), INTERVAL 3 MONTH))
+			   ))
+		]]>
+	</select>
+
+	<select id="listForSap" parameterType="java.util.List" resultType="ClinicAdjust">
+		SELECT A.SNO,
+			   A.YEAR,
+			   A.QUARTER,
+			   A.MEM_NO,
+			   A.TOT_SALE_AMT,
+			   A.SALE_AMT,
+			   A.PICKUP_SALE_AMT,
+			   A.DPACK_SALE_AMT,
+			   A.TOT_SUPPLY_AMT,
+			   A.FEE,
+			   A.PROMO_FEE,
+			   A.PICKUP_FEE,
+			   A.DPACK_FEE,
+			   A.ADJUST_AMT,
+			   A.STATUS,
+			   A.DEADLINE,
+			   A.PAYMENT_DATE,
+			   A.SAP_RESULT,
+			   B.CLINIC_ID,
+			   B.CLINIC_NAME,
+			   B.BUSINESS_NO,
+			   B.BUSINESS_NO2
+	      FROM T_CLINIC_ADJUST A
+	      		INNER JOIN T_CLINIC B
+	      			ON A.MEM_NO = B.MEM_NO
+	     WHERE A.SNO IN
+		<foreach item="sno" collection="list" open="(" close=")" separator=",">
+				#{sno}
+		</foreach>
+	</select>
+
+	<update id="updateSap" parameterType="ClinicAdjust">
+		UPDATE T_CLINIC_ADJUST
+		   SET SAP_RESULT		= #{sapResult},
+		   	   SAP_MSG			= #{sapMsg},
+		   	   SAP_GJAHR		= #{sapGjahr},
+		   	   SAP_BELNR		= #{sapBelnr},
+		   	   SAP_BUDAT		= #{sapBudat},
+		   	   SAP_PNT_VDR_CD	= #{sapPntVdrCd},
+		   	   SAP_PNT_VDR_NM	= #{sapPntVdrNm},
+		   	   SAP_BIZ_REG_NO	= #{sapBizRegNo},
+		   	   SAP_DATE			= NOW()
+		 WHERE SNO				= #{sno}
+	</update>
+</mapper>

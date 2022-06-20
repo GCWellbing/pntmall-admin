@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="AppPush">
+	<select id="list" parameterType="AppPushSearch" resultType="AppPush">
+		<![CDATA[
+		SELECT A.PNO,
+			   A.TITLE,
+			   A.SEND_DATE,
+			   A.STATUS,
+			   A.CDATE,
+			   A.IOS_SUCCESS,
+			   A.IOS_FAIL,
+			   A.ANDROID_SUCCESS,
+			   A.ANDROID_FAIL,
+			   CASE WHEN A.STATUS = 30 THEN
+			   			(SELECT COUNT(*) 
+			   			  FROM T_APP_PUSH_TARGET X
+			   			  		INNER JOIN T_APP_PUSH_DEVICE Y
+			   			  			ON X.DEVICE_ID = Y.DEVICE_ID
+			   			  WHERE X.PNO = A.PNO
+			   			    AND Y.APP_OS = 'IOS')	
+			   		ELSE 0 END IOS_CNT,
+			   CASE WHEN A.STATUS = 30 THEN
+			   			(SELECT COUNT(*) 
+			   			  FROM T_APP_PUSH_TARGET X
+			   			  		INNER JOIN T_APP_PUSH_DEVICE Y
+			   			  			ON X.DEVICE_ID = Y.DEVICE_ID
+			   			  WHERE X.PNO = A.PNO
+			   			    AND Y.APP_OS = 'ANDROID')
+			   		ELSE 0 END ANDROID_CNT,
+			   CASE WHEN A.STATUS = 30 THEN
+			   			(SELECT COUNT(*) 
+			   			  FROM T_APP_PUSH_TARGET X
+			   			  		INNER JOIN T_APP_PUSH_DEVICE Y
+			   			  			ON X.DEVICE_ID = Y.DEVICE_ID
+			   			  WHERE X.PNO = A.PNO
+			   			    AND X.ODATE IS NOT NULL
+			   			    AND Y.APP_OS = 'IOS')
+			   		ELSE 0 END IOS_OPEN_CNT,
+			   CASE WHEN A.STATUS = 30 THEN
+			   			(SELECT COUNT(*) 
+			   			  FROM T_APP_PUSH_TARGET X
+			   			  		INNER JOIN T_APP_PUSH_DEVICE Y
+			   			  			ON X.DEVICE_ID = Y.DEVICE_ID
+			   			  WHERE X.PNO = A.PNO
+			   			    AND X.ODATE IS NOT NULL
+			   			    AND Y.APP_OS = 'ANDROID')
+			   		ELSE 0 END ANDROID_OPEN_CNT
+		  FROM T_APP_PUSH A
+		 WHERE 1 = 1
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(sdate)">
+		   AND A.CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(edate)">
+		<![CDATA[
+		   AND A.CDATE <= STR_TO_DATE(CONCAT(#{edate}, ' 23:59:59'), '%Y.%m.%d %H:%i:%s')
+		]]>
+		</if>
+		ORDER BY PNO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="AdminSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_APP_PUSH A
+		 WHERE 1 = 1
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(sdate)">
+		   AND A.CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(edate)">
+		<![CDATA[
+		   AND A.CDATE <= STR_TO_DATE(CONCAT(#{edate}, ' 23:59:59'), '%Y.%m.%d %H:%i:%s')
+		]]>
+		</if>
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="AppPush">
+		SELECT A.PNO,
+			   A.TITLE,
+			   A.MSG,
+			   A.LINK,
+			   A.IMG,
+			   A.SEND_DATE,
+			   A.MEMO,
+			   A.STATUS,
+			   A.SSDATE,
+			   A.SEDATE,
+			   A.TARGET_GUBUN,
+			   A.SIDATE,
+			   A.EIDATE,
+			   A.OS,
+			   A.AGREE_YN,
+			   A.EXCEL,
+			   A.IOS_SUCCESS,
+			   A.IOS_FAIL,
+			   A.ANDROID_SUCCESS,
+			   A.ANDROID_FAIL,
+			   A.CDATE,
+			   A.UDATE,			  
+			   CASE WHEN A.STATUS = 30 THEN
+			   			(SELECT COUNT(*) 
+			   			  FROM T_APP_PUSH_TARGET X
+			   			  		INNER JOIN T_APP_PUSH_DEVICE Y
+			   			  			ON X.DEVICE_ID = Y.DEVICE_ID
+			   			  WHERE X.PNO = A.PNO
+			   			    AND Y.APP_OS = 'IOS')	
+			   		ELSE 0 END IOS_CNT,
+			   CASE WHEN A.STATUS = 30 THEN
+			   			(SELECT COUNT(*) 
+			   			  FROM T_APP_PUSH_TARGET X
+			   			  		INNER JOIN T_APP_PUSH_DEVICE Y
+			   			  			ON X.DEVICE_ID = Y.DEVICE_ID
+			   			  WHERE X.PNO = A.PNO
+			   			    AND Y.APP_OS = 'ANDROID')
+			   		ELSE 0 END ANDROID_CNT,
+			   CASE WHEN A.STATUS = 30 THEN
+			   			(SELECT COUNT(*) 
+			   			  FROM T_APP_PUSH_TARGET X
+			   			  		INNER JOIN T_APP_PUSH_DEVICE Y
+			   			  			ON X.DEVICE_ID = Y.DEVICE_ID
+			   			  WHERE X.PNO = A.PNO
+			   			    AND X.ADATE IS NOT NULL
+			   			    AND Y.APP_OS = 'IOS')
+			   		ELSE 0 END IOS_RECEIVE_CNT,
+			   CASE WHEN A.STATUS = 30 THEN
+			   			(SELECT COUNT(*) 
+			   			  FROM T_APP_PUSH_TARGET X
+			   			  		INNER JOIN T_APP_PUSH_DEVICE Y
+			   			  			ON X.DEVICE_ID = Y.DEVICE_ID
+			   			  WHERE X.PNO = A.PNO
+			   			    AND X.ADATE IS NOT NULL
+			   			    AND Y.APP_OS = 'ANDROID')
+			   		ELSE 0 END ANDROID_RECEIVE_CNT,
+			   CASE WHEN A.STATUS = 30 THEN
+			   			(SELECT COUNT(*) 
+			   			  FROM T_APP_PUSH_TARGET X
+			   			  		INNER JOIN T_APP_PUSH_DEVICE Y
+			   			  			ON X.DEVICE_ID = Y.DEVICE_ID
+			   			  WHERE X.PNO = A.PNO
+			   			    AND X.ODATE IS NOT NULL
+			   			    AND Y.APP_OS = 'IOS')
+			   		ELSE 0 END IOS_OPEN_CNT,
+			   CASE WHEN A.STATUS = 30 THEN
+			   			(SELECT COUNT(*) 
+			   			  FROM T_APP_PUSH_TARGET X
+			   			  		INNER JOIN T_APP_PUSH_DEVICE Y
+			   			  			ON X.DEVICE_ID = Y.DEVICE_ID
+			   			  WHERE X.PNO = A.PNO
+			   			    AND X.ODATE IS NOT NULL
+			   			    AND Y.APP_OS = 'ANDROID')
+			   		ELSE 0 END ANDROID_OPEN_CNT,
+		       <include refid="Common.userid">
+		       	<property name="alias" value="A" />
+		       </include>
+		  FROM T_APP_PUSH A
+		 WHERE A.PNO = #{pno}
+	</select>
+	
+	<insert id="insert" parameterType="AppPush" useGeneratedKeys="true" keyProperty="pno" keyColumn="PNO">
+		INSERT INTO T_APP_PUSH (
+			TITLE,
+			MSG,
+			LINK,
+			IMG,
+			SEND_DATE,
+			MEMO,
+			STATUS,
+			TARGET_GUBUN,
+			SIDATE,
+			EIDATE,
+			OS,
+			AGREE_YN,
+			EXCEL,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{title},
+			#{msg},
+			#{link},
+			#{img},
+			#{sendDate},
+			#{memo},
+			10,
+			#{targetGubun},
+			#{sidate},
+			#{eidate},
+			#{os},
+			#{agreeYn},
+			#{excel},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+	
+	<update id="update" parameterType="AppPush">
+		UPDATE T_APP_PUSH
+		   SET TITLE		= #{title},
+		   	   MSG			= #{msg},
+		   	   LINK			= #{link},
+		   	   IMG			= #{img},
+		   	   SEND_DATE	= #{sendDate},
+		   	   TARGET_GUBUN	= #{targetGubun},
+		   	   SIDATE		= #{sidate},
+		   	   EIDATE		= #{eidate},
+		   	   OS			= #{os},
+		   	   AGREE_YN		= #{agreeYn},
+		   	   EXCEL		= #{excel},
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE PNO			= #{pno}
+	</update>
+	
+	<insert id="insertExcel" parameterType="AppPushExcel">
+		INSERT INTO T_APP_PUSH_EXCEL (
+			PNO,
+			MEM_ID
+		) VALUES (
+			#{pno},
+			#{memId}
+		)
+	</insert>
+	
+	<delete id="deleteExcel" parameterType="java.lang.Integer">
+		DELETE FROM T_APP_PUSH_EXCEL
+		 WHERE PNO = #{pno}
+	</delete>
+	
+	<insert id="insertLog" parameterType="AppPush">
+		INSERT INTO T_APP_PUSH_STATUS_LOG (
+			PNO,
+			STATUS,
+			CUSER,
+			CDATE
+		) VALUES (
+			#{pno},
+			#{status},
+			#{cuser},
+			NOW()
+		)
+	</insert>
+	
+	<select id="targetCount1" parameterType="AppPush" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_APP_PUSH_DEVICE A
+		  		INNER JOIN T_MEMBER B
+		  			ON A.MEM_NO = B.MEM_NO
+		 WHERE B.STATUS = 'S'
+		   AND B.SLEEP_YN <> 'Y'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(sidate)">
+		   AND A.CDATE >= STR_TO_DATE(#{sidate}, '%Y.%m.%d')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(eidate)">
+		<![CDATA[
+		   AND A.CDATE <= STR_TO_DATE(CONCAT(#{eidate}, ' 23:59:59'), '%Y.%m.%d %H:%i:%s')
+		]]>
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@notEquals(os, "ALL")'>
+		   AND A.APP_OS = #{os}
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@notEquals(agreeYn, "A")'>
+		   AND A.PUSH_YN = #{agreeYn}
+		</if>
+	</select>
+	
+	<select id="targetCount2" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_APP_PUSH_EXCEL A
+		  		INNER JOIN T_MEMBER B
+		  			ON A.MEM_ID = B.MEM_ID
+		  		INNER JOIN T_APP_PUSH_DEVICE C
+		  			ON B.MEM_NO = C.MEM_NO
+		 WHERE A.PNO = #{pno}
+		   AND B.STATUS = 'S'
+		   AND B.SLEEP_YN <> 'Y'
+		]]>
+	</select>		
+	
+	<update id="updateStatus" parameterType="AppPush">
+		UPDATE T_APP_PUSH
+		   SET STATUS		= #{status},
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE PNO			= #{pno}
+	</update>
+	
+	<select id="targetList" parameterType="AppPushTarget" resultType="AppPushTarget">
+		SELECT A.PNO,
+			   A.TNO,
+			   A.DEVICE_ID,
+			   A.MEM_NO,
+			   A.APP_TOKEN,
+			   A.SDATE,
+			   A.ADATE,
+			   A.ODATE,
+			   B.APP_OS,
+			   C.MEM_ID,
+			   C.NAME MEM_NAME
+		  FROM T_APP_PUSH_TARGET A
+		  		INNER JOIN T_APP_PUSH_DEVICE B
+		  			ON A.DEVICE_ID = B.DEVICE_ID
+		  		INNER JOIN T_MEMBER C
+		  			ON A.MEM_NO = C.MEM_NO
+		 WHERE A.PNO = #{pno}
+		ORDER BY TNO
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+	
+	<select id="targetCount" parameterType="AppPushTarget" resultType="java.lang.Integer">
+		SELECT COUNT(*)
+		  FROM T_APP_PUSH_TARGET A
+		  		INNER JOIN T_APP_PUSH_DEVICE B
+		  			ON A.DEVICE_ID = B.DEVICE_ID
+		  		INNER JOIN T_MEMBER C
+		  			ON A.MEM_NO = C.MEM_NO
+		 WHERE A.PNO = #{pno}
+	</select>
+	
+</mapper>

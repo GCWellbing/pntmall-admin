@@ -1,0 +1,706 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="OrderStat">
+	<select id="saleRank" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT B.PNO, C.IMG, C.PNAME, 
+			   SUM(B.SALE_PRICE) TOT_AMT, 
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', B.SALE_PRICE, 0)) TOT_PC_AMT, 
+			   SUM(IF(A.DEVICE = 'M', B.SALE_PRICE, 0)) TOT_MO_AMT, 
+			   SUM(IF(A.DEVICE = 'A', B.SALE_PRICE, 0)) TOT_AP_AMT, 
+			   SUM(B.QTY) TOT_QTY, 
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', B.QTY, 0)) TOT_PC_QTY, 
+			   SUM(IF(A.DEVICE = 'M', B.QTY, 0)) TOT_MO_QTY, 
+			   SUM(IF(A.DEVICE = 'A', B.QTY, 0)) TOT_AP_QTY, 
+		       COUNT(DISTINCT(A.ORDERID)) TOT_CNT, 
+		       COUNT(DISTINCT(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.ORDERID, NULL))) TOT_PC_CNT, 
+		       COUNT(DISTINCT(IF(A.DEVICE = 'M', A.ORDERID, NULL))) TOT_MO_CNT,
+		       COUNT(DISTINCT(IF(A.DEVICE = 'A', A.ORDERID, NULL))) TOT_AP_CNT
+		  FROM T_ORDER A
+				INNER JOIN T_ORDER_ITEM B
+					ON A.ORDERID = B.ORDERID
+				INNER JOIN T_PRODUCT C
+					ON B.PNO = C.PNO
+		 WHERE A.GUBUN = 1
+		   AND A.STATUS IN (SELECT STATUS FROM T_ORDER_STATUS_CODE WHERE ORDER_TYPE = '1')
+		   AND A.STATUS <> '110'
+		   AND A.ODATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		   AND A.ODATE < DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(cate1)">
+		   AND C.PNO IN (SELECT PNO FROM T_PRODUCT_CATEGORY WHERE CATE_NO IN (SELECT CATE_NO FROM T_CATEGORY WHERE PCATE_NO = #{cate1}))
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(cate2)">
+		   AND C.PNO IN (SELECT PNO FROM T_PRODUCT_CATEGORY WHERE CATE_NO = #{cate2})
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(pname)">
+		   AND C.PNAME LIKE CONCAT('%', #{pname}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(orderGubun)">
+		   AND A.ORDER_GUBUN = #{orderGubun}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+		   AND A.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+		GROUP BY B.PNO, C.IMG, C.PNAME
+		ORDER BY TOT_AMT DESC
+	</select>
+	
+	<select id="saleList1" parameterType="Param" resultType="Param">
+		SELECT DATE(A.ODATE) ODATE,
+			   SUM(A.AMT) AMT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.AMT, 0)) PC_AMT,
+			   SUM(IF(A.DEVICE = 'M', A.AMT, 0)) MO_AMT, 
+			   SUM(IF(A.DEVICE = 'A', A.AMT, 0)) AP_AMT,
+			   SUM(A.GRADE_DISCOUNT + COUPON_DISCOUNT) DISCOUNT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.GRADE_DISCOUNT + A.COUPON_DISCOUNT, 0)) PC_DISCOUNT,
+			   SUM(IF(A.DEVICE = 'M', A.GRADE_DISCOUNT + A.COUPON_DISCOUNT, 0)) MO_DISCOUNT, 
+			   SUM(IF(A.DEVICE = 'A', A.GRADE_DISCOUNT + A.COUPON_DISCOUNT, 0)) AP_DISCOUNT,
+			   SUM(A.AMT - A.GRADE_DISCOUNT - A.COUPON_DISCOUNT) PAY_AMT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.AMT - A.GRADE_DISCOUNT - A.COUPON_DISCOUNT, 0)) PC_PAY_AMT,
+			   SUM(IF(A.DEVICE = 'M', A.AMT - A.GRADE_DISCOUNT - A.COUPON_DISCOUNT, 0)) MO_PAY_AMT, 
+			   SUM(IF(A.DEVICE = 'A', A.AMT - A.GRADE_DISCOUNT - A.COUPON_DISCOUNT, 0)) AP_PAY_AMT,
+			   SUM(A.SHIP_AMT) SHIP_AMT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.SHIP_AMT, 0)) PC_SHIP_AMT,
+			   SUM(IF(A.DEVICE = 'M', A.SHIP_AMT, 0)) MO_SHIP_AMT, 
+			   SUM(IF(A.DEVICE = 'A', A.SHIP_AMT, 0)) AP_SHIP_AMT,
+			   SUM(A.SHIP_DISCOUNT) SHIP_DISCOUNT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.SHIP_DISCOUNT, 0)) PC_SHIP_DISCOUNT,
+			   SUM(IF(A.DEVICE = 'M', A.SHIP_DISCOUNT, 0)) MO_SHIP_DISCOUNT, 
+			   SUM(IF(A.DEVICE = 'A', A.SHIP_DISCOUNT, 0)) AP_SHIP_DISCOUNT,
+			   SUM(A.SHIP_AMT - A.SHIP_DISCOUNT) SHIP_PAY_AMT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.SHIP_AMT - A.SHIP_DISCOUNT, 0)) PC_SHIP_PAY_AMT,
+			   SUM(IF(A.DEVICE = 'M', A.SHIP_AMT - A.SHIP_DISCOUNT, 0)) MO_SHIP_PAY_AMT, 
+			   SUM(IF(A.DEVICE = 'A', A.SHIP_AMT - A.SHIP_DISCOUNT, 0)) AP_SHIP_PAY_AMT,
+			   IFNULL((SELECT SUM(V.AMT)
+                         FROM T_ORDER_REFUND V
+                        WHERE RNO IN (SELECT MAX(RNO)
+                                        FROM T_ORDER_REFUND X
+                                                INNER JOIN T_ORDER Y
+                                                    ON X.ORDERID = Y.ORDERID
+                                       WHERE X.ORDERID IN (SELECT ORDERID FROM T_ORDER_STATUS_LOG 
+                                                            WHERE STATUS = '380'
+                                                              AND DATE(CDATE) = DATE(A.ODATE))
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+									     AND Y.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+                                    GROUP BY X.ORDERID)), 0) REFUND,
+			   IFNULL((SELECT SUM(V.AMT)
+                         FROM T_ORDER_REFUND V
+                        WHERE RNO IN (SELECT MAX(RNO)
+                                        FROM T_ORDER_REFUND X
+                                                INNER JOIN T_ORDER Y
+                                                    ON X.ORDERID = Y.ORDERID
+                                       WHERE X.ORDERID IN (SELECT ORDERID FROM T_ORDER_STATUS_LOG 
+                                                            WHERE STATUS = '380'
+                                                              AND DATE(CDATE) = DATE(A.ODATE))
+                                         AND IF(IFNULL(Y.DEVICE, '') = '', 'P', Y.DEVICE) = 'P'
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+									     AND Y.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+                                    GROUP BY X.ORDERID)), 0) PC_REFUND,
+			   IFNULL((SELECT SUM(V.AMT)
+                         FROM T_ORDER_REFUND V
+                        WHERE RNO IN (SELECT MAX(RNO)
+                                        FROM T_ORDER_REFUND X
+                                                INNER JOIN T_ORDER Y
+                                                    ON X.ORDERID = Y.ORDERID
+                                       WHERE X.ORDERID IN (SELECT ORDERID FROM T_ORDER_STATUS_LOG 
+                                                            WHERE STATUS = '380'
+                                                              AND DATE(CDATE) = DATE(A.ODATE))
+                                         AND Y.DEVICE = 'M'
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+									     AND Y.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+                                    GROUP BY X.ORDERID)), 0) MO_REFUND,
+			   IFNULL((SELECT SUM(V.AMT)
+                         FROM T_ORDER_REFUND V
+                        WHERE RNO IN (SELECT MAX(RNO)
+                                        FROM T_ORDER_REFUND X
+                                                INNER JOIN T_ORDER Y
+                                                    ON X.ORDERID = Y.ORDERID
+                                       WHERE X.ORDERID IN (SELECT ORDERID FROM T_ORDER_STATUS_LOG 
+                                                            WHERE STATUS = '380'
+                                                              AND DATE(CDATE) = DATE(A.ODATE))
+                                         AND Y.DEVICE = 'A'
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+									     AND Y.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+                                    GROUP BY X.ORDERID)), 0) AP_REFUND
+		<![CDATA[
+		  FROM T_ORDER A
+		 WHERE A.GUBUN = 1
+		   AND A.STATUS IN (SELECT STATUS FROM T_ORDER_STATUS_CODE WHERE ORDER_TYPE = '1')
+		   AND A.STATUS <> '110'
+		   AND A.ODATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		   AND A.ODATE < DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(orderGubun)">
+		   AND A.ORDER_GUBUN = #{orderGubun}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+		   AND A.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+		GROUP BY DATE(A.ODATE)
+		ORDER BY DATE(A.ODATE)
+	</select>
+	
+	<select id="saleList2" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT DATE_FORMAT(A.ODATE, '%H:00') ODATE,
+			   SUM(A.AMT) AMT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.AMT, 0)) PC_AMT,
+			   SUM(IF(A.DEVICE = 'M', A.AMT, 0)) MO_AMT, 
+			   SUM(IF(A.DEVICE = 'A', A.AMT, 0)) AP_AMT,
+			   SUM(A.GRADE_DISCOUNT + COUPON_DISCOUNT) DISCOUNT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.GRADE_DISCOUNT + A.COUPON_DISCOUNT, 0)) PC_DISCOUNT,
+			   SUM(IF(A.DEVICE = 'M', A.GRADE_DISCOUNT + A.COUPON_DISCOUNT, 0)) MO_DISCOUNT, 
+			   SUM(IF(A.DEVICE = 'A', A.GRADE_DISCOUNT + A.COUPON_DISCOUNT, 0)) AP_DISCOUNT,
+			   SUM(A.AMT - A.GRADE_DISCOUNT - A.COUPON_DISCOUNT) PAY_AMT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.AMT - A.GRADE_DISCOUNT - A.COUPON_DISCOUNT, 0)) PC_PAY_AMT,
+			   SUM(IF(A.DEVICE = 'M', A.AMT - A.GRADE_DISCOUNT - A.COUPON_DISCOUNT, 0)) MO_PAY_AMT, 
+			   SUM(IF(A.DEVICE = 'A', A.AMT - A.GRADE_DISCOUNT - A.COUPON_DISCOUNT, 0)) AP_PAY_AMT,
+			   SUM(A.SHIP_AMT) SHIP_AMT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.SHIP_AMT, 0)) PC_SHIP_AMT,
+			   SUM(IF(A.DEVICE = 'M', A.SHIP_AMT, 0)) MO_SHIP_AMT, 
+			   SUM(IF(A.DEVICE = 'A', A.SHIP_AMT, 0)) AP_SHIP_AMT,
+			   SUM(A.SHIP_DISCOUNT) SHIP_DISCOUNT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.SHIP_DISCOUNT, 0)) PC_SHIP_DISCOUNT,
+			   SUM(IF(A.DEVICE = 'M', A.SHIP_DISCOUNT, 0)) MO_SHIP_DISCOUNT, 
+			   SUM(IF(A.DEVICE = 'A', A.SHIP_DISCOUNT, 0)) AP_SHIP_DISCOUNT,
+			   SUM(A.SHIP_AMT - A.SHIP_DISCOUNT) SHIP_PAY_AMT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.SHIP_AMT - A.SHIP_DISCOUNT, 0)) PC_SHIP_PAY_AMT,
+			   SUM(IF(A.DEVICE = 'M', A.SHIP_AMT - A.SHIP_DISCOUNT, 0)) MO_SHIP_PAY_AMT, 
+			   SUM(IF(A.DEVICE = 'A', A.SHIP_AMT - A.SHIP_DISCOUNT, 0)) AP_SHIP_PAY_AMT,
+			   IFNULL((SELECT SUM(V.AMT)
+                         FROM T_ORDER_REFUND V
+                        WHERE RNO IN (SELECT MAX(RNO)
+                                        FROM T_ORDER_REFUND X
+                                                INNER JOIN T_ORDER Y
+                                                    ON X.ORDERID = Y.ORDERID
+                                       WHERE X.ORDERID IN (SELECT ORDERID FROM T_ORDER_STATUS_LOG 
+                                                            WHERE STATUS = '380'
+                                                              AND CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+                                               				  AND CDATE < DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)		
+											   				  AND DATE_FORMAT(CDATE, '%H') = DATE_FORMAT(A.ODATE, '%H'))
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+									     AND Y.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+                                    GROUP BY X.ORDERID)), 0) REFUND,
+		<![CDATA[
+			   IFNULL((SELECT SUM(V.AMT)
+                         FROM T_ORDER_REFUND V
+                        WHERE RNO IN (SELECT MAX(RNO)
+                                        FROM T_ORDER_REFUND X
+                                                INNER JOIN T_ORDER Y
+                                                    ON X.ORDERID = Y.ORDERID
+                                       WHERE X.ORDERID IN (SELECT ORDERID FROM T_ORDER_STATUS_LOG 
+                                                            WHERE STATUS = '380'
+                                                              AND CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+                                               				  AND CDATE < DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)		
+											   				  AND DATE_FORMAT(CDATE, '%H') = DATE_FORMAT(A.ODATE, '%H'))
+                                         AND IF(IFNULL(Y.DEVICE, '') = '', 'P', Y.DEVICE) = 'P'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+									     AND Y.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+                                    GROUP BY X.ORDERID)), 0) PC_REFUND,
+		<![CDATA[
+			   IFNULL((SELECT SUM(V.AMT)
+                         FROM T_ORDER_REFUND V
+                        WHERE RNO IN (SELECT MAX(RNO)
+                                        FROM T_ORDER_REFUND X
+                                                INNER JOIN T_ORDER Y
+                                                    ON X.ORDERID = Y.ORDERID
+                                       WHERE X.ORDERID IN (SELECT ORDERID FROM T_ORDER_STATUS_LOG 
+                                                            WHERE STATUS = '380'
+                                                              AND CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+                                              				  AND CDATE < DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)		
+											   				  AND DATE_FORMAT(CDATE, '%H') = DATE_FORMAT(A.ODATE, '%H'))
+                                         AND Y.DEVICE = 'M'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+									     AND Y.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+                                    GROUP BY X.ORDERID)), 0) MO_REFUND,
+		<![CDATA[
+			   IFNULL((SELECT SUM(V.AMT)
+                         FROM T_ORDER_REFUND V
+                        WHERE RNO IN (SELECT MAX(RNO)
+                                        FROM T_ORDER_REFUND X
+                                                INNER JOIN T_ORDER Y
+                                                    ON X.ORDERID = Y.ORDERID
+                                       WHERE X.ORDERID IN (SELECT ORDERID FROM T_ORDER_STATUS_LOG 
+                                                            WHERE STATUS = '380'
+                                                              AND CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+                                               				  AND CDATE < DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)		
+											   				  AND DATE_FORMAT(CDATE, '%H') = DATE_FORMAT(A.ODATE, '%H'))
+                                         AND Y.DEVICE = 'A'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+									     AND Y.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+                                    GROUP BY X.ORDERID)), 0) AP_REFUND
+		<![CDATA[
+		  FROM T_ORDER A
+		 WHERE A.GUBUN = 1
+		   AND A.STATUS IN (SELECT STATUS FROM T_ORDER_STATUS_CODE WHERE ORDER_TYPE = '1')
+		   AND A.STATUS <> '110'
+		   AND A.ODATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		   AND A.ODATE < DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(orderGubun)">
+		   AND A.ORDER_GUBUN = #{orderGubun}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+		   AND A.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+		GROUP BY DATE_FORMAT(A.ODATE, '%H:00')
+		ORDER BY DATE_FORMAT(A.ODATE, '%H:00')
+	</select>	
+	
+	<select id="saleList3" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT DATE_FORMAT(A.ODATE, '%Y.%m') ODATE,
+			   SUM(A.AMT) AMT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.AMT, 0)) PC_AMT,
+			   SUM(IF(A.DEVICE = 'M', A.AMT, 0)) MO_AMT, 
+			   SUM(IF(A.DEVICE = 'A', A.AMT, 0)) AP_AMT,
+			   SUM(A.GRADE_DISCOUNT + COUPON_DISCOUNT) DISCOUNT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.GRADE_DISCOUNT + A.COUPON_DISCOUNT, 0)) PC_DISCOUNT,
+			   SUM(IF(A.DEVICE = 'M', A.GRADE_DISCOUNT + A.COUPON_DISCOUNT, 0)) MO_DISCOUNT, 
+			   SUM(IF(A.DEVICE = 'A', A.GRADE_DISCOUNT + A.COUPON_DISCOUNT, 0)) AP_DISCOUNT,
+			   SUM(A.AMT - A.GRADE_DISCOUNT - A.COUPON_DISCOUNT) PAY_AMT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.AMT - A.GRADE_DISCOUNT - A.COUPON_DISCOUNT, 0)) PC_PAY_AMT,
+			   SUM(IF(A.DEVICE = 'M', A.AMT - A.GRADE_DISCOUNT - A.COUPON_DISCOUNT, 0)) MO_PAY_AMT, 
+			   SUM(IF(A.DEVICE = 'A', A.AMT - A.GRADE_DISCOUNT - A.COUPON_DISCOUNT, 0)) AP_PAY_AMT,
+			   SUM(A.SHIP_AMT) SHIP_AMT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.SHIP_AMT, 0)) PC_SHIP_AMT,
+			   SUM(IF(A.DEVICE = 'M', A.SHIP_AMT, 0)) MO_SHIP_AMT, 
+			   SUM(IF(A.DEVICE = 'A', A.SHIP_AMT, 0)) AP_SHIP_AMT,
+			   SUM(A.SHIP_DISCOUNT) SHIP_DISCOUNT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.SHIP_DISCOUNT, 0)) PC_SHIP_DISCOUNT,
+			   SUM(IF(A.DEVICE = 'M', A.SHIP_DISCOUNT, 0)) MO_SHIP_DISCOUNT, 
+			   SUM(IF(A.DEVICE = 'A', A.SHIP_DISCOUNT, 0)) AP_SHIP_DISCOUNT,
+			   SUM(A.SHIP_AMT - A.SHIP_DISCOUNT) SHIP_PAY_AMT,
+			   SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.SHIP_AMT - A.SHIP_DISCOUNT, 0)) PC_SHIP_PAY_AMT,
+			   SUM(IF(A.DEVICE = 'M', A.SHIP_AMT - A.SHIP_DISCOUNT, 0)) MO_SHIP_PAY_AMT, 
+			   SUM(IF(A.DEVICE = 'A', A.SHIP_AMT - A.SHIP_DISCOUNT, 0)) AP_SHIP_PAY_AMT,
+			   IFNULL((SELECT SUM(V.AMT)
+                         FROM T_ORDER_REFUND V
+                        WHERE RNO IN (SELECT MAX(RNO)
+                                        FROM T_ORDER_REFUND X
+                                                INNER JOIN T_ORDER Y
+                                                    ON X.ORDERID = Y.ORDERID
+                                       WHERE X.ORDERID IN (SELECT ORDERID FROM T_ORDER_STATUS_LOG 
+                                                            WHERE STATUS = '380'
+                                                              AND CDATE >= STR_TO_DATE(CONCAT(#{sdate}, '.01'), '%Y.%m.%d')
+                                               				  AND CDATE < DATE_ADD(STR_TO_DATE(CONCAT(#{edate}, '.01'), '%Y.%m.%d'), INTERVAL 1 MONTH)		
+											   				  AND DATE_FORMAT(CDATE, '%Y.%m') = DATE_FORMAT(A.ODATE, '%Y.%m'))
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+									     AND Y.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+                                    GROUP BY X.ORDERID)), 0) REFUND,
+		<![CDATA[
+			   IFNULL((SELECT SUM(V.AMT)
+                         FROM T_ORDER_REFUND V
+                        WHERE RNO IN (SELECT MAX(RNO)
+                                        FROM T_ORDER_REFUND X
+                                                INNER JOIN T_ORDER Y
+                                                    ON X.ORDERID = Y.ORDERID
+                                       WHERE X.ORDERID IN (SELECT ORDERID FROM T_ORDER_STATUS_LOG 
+                                                            WHERE STATUS = '380'
+                                                              AND CDATE >= STR_TO_DATE(CONCAT(#{sdate}, '.01'), '%Y.%m.%d')
+                                               				  AND CDATE < DATE_ADD(STR_TO_DATE(CONCAT(#{edate}, '.01'), '%Y.%m.%d'), INTERVAL 1 MONTH)		
+											   				  AND DATE_FORMAT(CDATE, '%Y.%m') = DATE_FORMAT(A.ODATE, '%Y.%m'))
+                                         AND IF(IFNULL(Y.DEVICE, '') = '', 'P', Y.DEVICE) = 'P'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+									     AND Y.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+                                    GROUP BY X.ORDERID)), 0) PC_REFUND,
+		<![CDATA[
+			   IFNULL((SELECT SUM(V.AMT)
+                         FROM T_ORDER_REFUND V
+                        WHERE RNO IN (SELECT MAX(RNO)
+                                        FROM T_ORDER_REFUND X
+                                                INNER JOIN T_ORDER Y
+                                                    ON X.ORDERID = Y.ORDERID
+                                       WHERE X.ORDERID IN (SELECT ORDERID FROM T_ORDER_STATUS_LOG 
+                                                            WHERE STATUS = '380'
+                                                              AND CDATE >= STR_TO_DATE(CONCAT(#{sdate}, '.01'), '%Y.%m.%d')
+                                               				  AND CDATE < DATE_ADD(STR_TO_DATE(CONCAT(#{edate}, '.01'), '%Y.%m.%d'), INTERVAL 1 MONTH)		
+											   				  AND DATE_FORMAT(CDATE, '%Y.%m') = DATE_FORMAT(A.ODATE, '%Y.%m'))
+                                         AND Y.DEVICE = 'M'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+									     AND Y.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+                                    GROUP BY X.ORDERID)), 0) MO_REFUND,
+		<![CDATA[
+			   IFNULL((SELECT SUM(V.AMT)
+                         FROM T_ORDER_REFUND V
+                        WHERE RNO IN (SELECT MAX(RNO)
+                                        FROM T_ORDER_REFUND X
+                                                INNER JOIN T_ORDER Y
+                                                    ON X.ORDERID = Y.ORDERID
+                                       WHERE X.ORDERID IN (SELECT ORDERID FROM T_ORDER_STATUS_LOG 
+                                                            WHERE STATUS = '380'
+                                                              AND CDATE >= STR_TO_DATE(CONCAT(#{sdate}, '.01'), '%Y.%m.%d')
+                                               				  AND CDATE < DATE_ADD(STR_TO_DATE(CONCAT(#{edate}, '.01'), '%Y.%m.%d'), INTERVAL 1 MONTH)		
+											   				  AND DATE_FORMAT(CDATE, '%Y.%m') = DATE_FORMAT(A.ODATE, '%Y.%m'))
+                                         AND Y.DEVICE = 'A'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+									     AND Y.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+                                    GROUP BY X.ORDERID)), 0) AP_REFUND
+		<![CDATA[
+		  FROM T_ORDER A
+		 WHERE A.GUBUN = 1
+		   AND A.STATUS IN (SELECT STATUS FROM T_ORDER_STATUS_CODE WHERE ORDER_TYPE = '1')
+		   AND A.STATUS <> '110'
+		   AND A.ODATE >= STR_TO_DATE(CONCAT(#{sdate}, '.01'), '%Y.%m.%d')
+		   AND A.ODATE < DATE_ADD(STR_TO_DATE(CONCAT(#{edate}, '.01'), '%Y.%m.%d'), INTERVAL 1 MONTH)
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(orderGubun)">
+		   AND A.ORDER_GUBUN = #{orderGubun}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+		   AND A.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+        GROUP BY DATE_FORMAT(A.ODATE, '%Y.%m')
+		ORDER BY DATE_FORMAT(A.ODATE, '%Y.%m')
+	</select>	
+	
+	<select id="orderList" parameterType="Param" resultType="Param">
+		<![CDATA[
+        SELECT ${odate} ODATE,
+               SUM(A.AMT) AMT,
+               SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.AMT, 0)) PC_AMT,
+ 			   SUM(IF(A.DEVICE = 'M', A.AMT, 0)) MO_AMT, 
+			   SUM(IF(A.DEVICE = 'A', A.AMT, 0)) AP_AMT,
+               COUNT(DISTINCT(A.ORDERID)) CNT,
+		       COUNT(DISTINCT(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.ORDERID, NULL))) PC_CNT, 
+		       COUNT(DISTINCT(IF(A.DEVICE = 'M', A.ORDERID, NULL))) MO_CNT,
+		       COUNT(DISTINCT(IF(A.DEVICE = 'A', A.ORDERID, NULL))) AP_CNT,
+               COUNT(DISTINCT(A.MEM_NO)) MEM_CNT,
+		       COUNT(DISTINCT(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.MEM_NO, NULL))) PC_MEM_CNT, 
+		       COUNT(DISTINCT(IF(A.DEVICE = 'M', A.MEM_NO, NULL))) MO_MEM_CNT,
+		       COUNT(DISTINCT(IF(A.DEVICE = 'A', A.MEM_NO, NULL))) AP_MEM_CNT,
+               SUM(B.QTY) QTY,
+               SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', B.QTY, 0)) PC_QTY,
+ 			   SUM(IF(A.DEVICE = 'M', B.QTY, 0)) MO_QTY, 
+			   SUM(IF(A.DEVICE = 'A', B.QTY, 0)) AP_QTY
+          FROM T_ORDER A
+                INNER JOIN (SELECT ORDERID, SUM(QTY) QTY FROM T_ORDER_ITEM GROUP BY ORDERID) B
+                    ON A.ORDERID = B.ORDERID
+		 WHERE A.GUBUN = 1
+		   AND A.STATUS IN (SELECT STATUS FROM T_ORDER_STATUS_CODE WHERE ORDER_TYPE = '1')
+		   AND A.STATUS <> '110'
+		]]>
+		<if test='@com.pntmall.common.mybatis.Check@notEquals(gubun, "3")'>
+		<![CDATA[
+		   AND A.ODATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		   AND A.ODATE < DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+		]]>
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@equals(gubun, "3")'>
+		<![CDATA[
+		   AND A.ODATE >= STR_TO_DATE(CONCAT(#{sdate}, '.01'), '%Y.%m.%d')
+		   AND A.ODATE < DATE_ADD(STR_TO_DATE(CONCAT(#{edate}, '.01'), '%Y.%m.%d'), INTERVAL 1 MONTH)
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(orderGubun)">
+		   AND A.ORDER_GUBUN = #{orderGubun}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+		   AND A.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+		GROUP BY ${odate}
+		ORDER BY ${odate}
+	</select>
+	
+	<select id="orderAgeList" parameterType="Param" resultType="Param">
+		<![CDATA[
+        SELECT ${odate} ODATE,
+               SUM(V.AMT) AMT,
+               SUM(IF(V.AGE <= 18, V.AMT, 0)) AMT10,
+               SUM(IF(V.AGE >= 19 AND V.AGE <= 28, V.AMT, 0)) AMT20,
+               SUM(IF(V.AGE >= 29 AND V.AGE <= 38, V.AMT, 0)) AMT30,
+               SUM(IF(V.AGE >= 39 AND V.AGE <= 48, V.AMT, 0)) AMT40,
+               SUM(IF(V.AGE >= 49 AND V.AGE <= 58, V.AMT, 0)) AMT50,
+               SUM(IF(V.AGE >= 59 AND V.AGE <= 68, V.AMT, 0)) AMT60,
+               SUM(IF(V.AGE >= 69, V.AMT, 0)) AMT70,
+               SUM(IF(IFNULL(V.AGE, '') = '', V.AMT, 0)) AMT80,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P', V.AMT, 0)) PC_AMT,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE <= 18, V.AMT, 0)) PC_AMT10,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 19 AND V.AGE <= 28, V.AMT, 0)) PC_AMT20,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 29 AND V.AGE <= 38, V.AMT, 0)) PC_AMT30,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 39 AND V.AGE <= 48, V.AMT, 0)) PC_AMT40,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 49 AND V.AGE <= 58, V.AMT, 0)) PC_AMT50,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 59 AND V.AGE <= 68, V.AMT, 0)) PC_AMT60,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 69, V.AMT, 0)) PC_AMT70,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND IFNULL(V.AGE, '') = '', V.AMT, 0)) PC_AMT80,
+               SUM(IF(V.DEVICE = 'M', V.AMT, 0)) MO_AMT,
+               SUM(IF(V.DEVICE = 'M' AND V.AGE <= 18, V.AMT, 0)) MO_AMT10,
+               SUM(IF(V.DEVICE = 'M' AND V.AGE >= 19 AND V.AGE <= 28, V.AMT, 0)) MO_AMT20,
+               SUM(IF(V.DEVICE = 'M' AND V.AGE >= 29 AND V.AGE <= 38, V.AMT, 0)) MO_AMT30,
+               SUM(IF(V.DEVICE = 'M' AND V.AGE >= 39 AND V.AGE <= 48, V.AMT, 0)) MO_AMT40,
+               SUM(IF(V.DEVICE = 'M' AND V.AGE >= 49 AND V.AGE <= 58, V.AMT, 0)) MO_AMT50,
+               SUM(IF(V.DEVICE = 'M' AND V.AGE >= 59 AND V.AGE <= 68, V.AMT, 0)) MO_AMT60,
+               SUM(IF(V.DEVICE = 'M' AND V.AGE >= 69, V.AMT, 0)) MO_AMT70,
+               SUM(IF(V.DEVICE = 'M' AND IFNULL(V.AGE, '') = '', V.AMT, 0)) MO_AMT80,
+               SUM(IF(V.DEVICE = 'A', V.AMT, 0)) AP_AMT,
+               SUM(IF(V.DEVICE = 'A' AND V.AGE <= 18, V.AMT, 0)) AP_AMT10,
+               SUM(IF(V.DEVICE = 'A' AND V.AGE >= 19 AND V.AGE <= 28, V.AMT, 0)) AP_AMT20,
+               SUM(IF(V.DEVICE = 'A' AND V.AGE >= 29 AND V.AGE <= 38, V.AMT, 0)) AP_AMT30,
+               SUM(IF(V.DEVICE = 'A' AND V.AGE >= 39 AND V.AGE <= 48, V.AMT, 0)) AP_AMT40,
+               SUM(IF(V.DEVICE = 'A' AND V.AGE >= 49 AND V.AGE <= 58, V.AMT, 0)) AP_AMT50,
+               SUM(IF(V.DEVICE = 'A' AND V.AGE >= 59 AND V.AGE <= 68, V.AMT, 0)) AP_AMT60,
+               SUM(IF(V.DEVICE = 'A' AND V.AGE >= 69, V.AMT, 0)) AP_AMT70,
+               SUM(IF(V.DEVICE = 'A' AND IFNULL(V.AGE, '') = '', V.AMT, 0)) AP_AMT80,
+               COUNT(DISTINCT(V.ORDERID)) CNT, 
+		       COUNT(DISTINCT(IF(V.AGE <= 18, V.ORDERID, NULL))) CNT10,
+		       COUNT(DISTINCT(IF(V.AGE >= 19 AND V.AGE <= 28, V.ORDERID, NULL))) CNT20,
+		       COUNT(DISTINCT(IF(V.AGE >= 29 AND V.AGE <= 38, V.ORDERID, NULL))) CNT30,
+		       COUNT(DISTINCT(IF(V.AGE >= 39 AND V.AGE <= 48, V.ORDERID, NULL))) CNT40,
+		       COUNT(DISTINCT(IF(V.AGE >= 49 AND V.AGE <= 58, V.ORDERID, NULL))) CNT50,
+		       COUNT(DISTINCT(IF(V.AGE >= 59 AND V.AGE <= 68, V.ORDERID, NULL))) CNT60,
+		       COUNT(DISTINCT(IF(V.AGE >= 69, V.ORDERID, NULL))) CNT70,
+		       COUNT(DISTINCT(IF(IFNULL(V.AGE, '') = '', V.ORDERID, NULL))) CNT80,
+               COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P', V.ORDERID, NULL))) PC_CNT,
+		       COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE <= 18, V.ORDERID, NULL))) PC_CNT10,
+		       COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 19 AND V.AGE <= 28, V.ORDERID, NULL))) PC_CNT20,
+		       COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 29 AND V.AGE <= 38, V.ORDERID, NULL))) PC_CNT30,
+		       COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 39 AND V.AGE <= 48, V.ORDERID, NULL))) PC_CNT40,
+		       COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 49 AND V.AGE <= 58, V.ORDERID, NULL))) PC_CNT50,
+		       COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 59 AND V.AGE <= 68, V.ORDERID, NULL))) PC_CNT60,
+		       COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 69, V.ORDERID, NULL))) PC_CNT70,
+		       COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND IFNULL(V.AGE, '') = '', V.ORDERID, NULL))) PC_CNT80,
+               COUNT(DISTINCT(IF(V.DEVICE = 'M', V.ORDERID, NULL))) MO_CNT,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'M' AND V.AGE <= 18, V.ORDERID, NULL))) MO_CNT10,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'M' AND V.AGE >= 19 AND V.AGE <= 28, V.ORDERID, NULL))) MO_CNT20,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'M' AND V.AGE >= 29 AND V.AGE <= 38, V.ORDERID, NULL))) MO_CNT30,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'M' AND V.AGE >= 39 AND V.AGE <= 48, V.ORDERID, NULL))) MO_CNT40,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'M' AND V.AGE >= 49 AND V.AGE <= 58, V.ORDERID, NULL))) MO_CNT50,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'M' AND V.AGE >= 59 AND V.AGE <= 68, V.ORDERID, NULL))) MO_CNT60,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'M' AND V.AGE >= 69, V.ORDERID, NULL))) MO_CNT70,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'M' AND IFNULL(V.AGE, '') = '', V.ORDERID, NULL))) MO_CNT80,
+               COUNT(DISTINCT(IF(V.DEVICE = 'A', V.ORDERID, NULL))) AP_CNT,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'A' AND V.AGE <= 18, V.ORDERID, NULL))) AP_CNT10,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'A' AND V.AGE >= 19 AND V.AGE <= 28, V.ORDERID, NULL))) AP_CNT20,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'A' AND V.AGE >= 29 AND V.AGE <= 38, V.ORDERID, NULL))) AP_CNT30,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'A' AND V.AGE >= 39 AND V.AGE <= 48, V.ORDERID, NULL))) AP_CNT40,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'A' AND V.AGE >= 49 AND V.AGE <= 58, V.ORDERID, NULL))) AP_CNT50,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'A' AND V.AGE >= 59 AND V.AGE <= 68, V.ORDERID, NULL))) AP_CNT60,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'A' AND V.AGE >= 69, V.ORDERID, NULL))) AP_CNT70,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'A' AND IFNULL(V.AGE, '') = '', V.ORDERID, NULL))) AP_CNT80,
+               COUNT(DISTINCT(V.MEM_NO)) MEM_CNT, 
+		       COUNT(DISTINCT(IF(V.AGE <= 18, V.ORDERID, NULL))) MEM_CNT10,
+		       COUNT(DISTINCT(IF(V.AGE >= 19 AND V.AGE <= 28, V.MEM_NO, NULL))) MEM_CNT20,
+		       COUNT(DISTINCT(IF(V.AGE >= 29 AND V.AGE <= 38, V.MEM_NO, NULL))) MEM_CNT30,
+		       COUNT(DISTINCT(IF(V.AGE >= 39 AND V.AGE <= 48, V.MEM_NO, NULL))) MEM_CNT40,
+		       COUNT(DISTINCT(IF(V.AGE >= 49 AND V.AGE <= 58, V.MEM_NO, NULL))) MEM_CNT50,
+		       COUNT(DISTINCT(IF(V.AGE >= 59 AND V.AGE <= 68, V.MEM_NO, NULL))) MEM_CNT60,
+		       COUNT(DISTINCT(IF(V.AGE >= 69, V.MEM_NO, NULL))) MEM_CNT70,
+		       COUNT(DISTINCT(IF(IFNULL(V.AGE, '') = '', V.MEM_NO, NULL))) MEM_CNT80,
+		       COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P', V.MEM_NO, NULL))) PC_MEM_CNT, 
+		       COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE <= 18, V.ORDERID, NULL))) PC_MEM_CNT10,
+		       COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 19 AND V.AGE <= 28, V.MEM_NO, NULL))) PC_MEM_CNT20,
+		       COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 29 AND V.AGE <= 38, V.MEM_NO, NULL))) PC_MEM_CNT30,
+		       COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 39 AND V.AGE <= 48, V.MEM_NO, NULL))) PC_MEM_CNT40,
+		       COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 49 AND V.AGE <= 58, V.MEM_NO, NULL))) PC_MEM_CNT50,
+		       COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 59 AND V.AGE <= 68, V.MEM_NO, NULL))) PC_MEM_CNT60,
+		       COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 69, V.MEM_NO, NULL))) PC_MEM_CNT70,
+		       COUNT(DISTINCT(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND IFNULL(V.AGE, '') = '', V.MEM_NO, NULL))) PC_MEM_CNT80,
+               COUNT(DISTINCT(IF(V.DEVICE = 'M', V.MEM_NO, NULL))) MO_MEM_CNT,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'M' AND V.AGE <= 18, V.ORDERID, NULL))) MO_MEM_CNT10,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'M' AND V.AGE >= 19 AND V.AGE <= 28, V.MEM_NO, NULL))) MO_MEM_CNT20,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'M' AND V.AGE >= 29 AND V.AGE <= 38, V.MEM_NO, NULL))) MO_MEM_CNT30,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'M' AND V.AGE >= 39 AND V.AGE <= 48, V.MEM_NO, NULL))) MO_MEM_CNT40,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'M' AND V.AGE >= 49 AND V.AGE <= 58, V.MEM_NO, NULL))) MO_MEM_CNT50,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'M' AND V.AGE >= 59 AND V.AGE <= 68, V.MEM_NO, NULL))) MO_MEM_CNT60,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'M' AND V.AGE >= 69, V.MEM_NO, NULL))) MO_MEM_CNT70,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'M' AND IFNULL(V.AGE, '') = '', V.MEM_NO, NULL))) MO_MEM_CNT80,
+               COUNT(DISTINCT(IF(V.DEVICE = 'A', V.MEM_NO, NULL))) AP_MEM_CNT,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'A' AND V.AGE <= 18, V.ORDERID, NULL))) AP_MEM_CNT10,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'A' AND V.AGE >= 19 AND V.AGE <= 28, V.MEM_NO, NULL))) AP_MEM_CNT20,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'A' AND V.AGE >= 29 AND V.AGE <= 38, V.MEM_NO, NULL))) AP_MEM_CNT30,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'A' AND V.AGE >= 39 AND V.AGE <= 48, V.MEM_NO, NULL))) AP_MEM_CNT40,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'A' AND V.AGE >= 49 AND V.AGE <= 58, V.MEM_NO, NULL))) AP_MEM_CNT50,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'A' AND V.AGE >= 59 AND V.AGE <= 68, V.MEM_NO, NULL))) AP_MEM_CNT60,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'A' AND V.AGE >= 69, V.MEM_NO, NULL))) AP_MEM_CNT70,
+		       COUNT(DISTINCT(IF(V.DEVICE = 'A' AND IFNULL(V.AGE, '') = '', V.MEM_NO, NULL))) AP_MEM_CNT80,
+               SUM(V.QTY) QTY,
+               SUM(IF(V.AGE <= 18, V.QTY, 0)) QTY10,
+               SUM(IF(V.AGE >= 19 AND V.AGE <= 28, V.QTY, 0)) QTY20,
+               SUM(IF(V.AGE >= 29 AND V.AGE <= 38, V.QTY, 0)) QTY30,
+               SUM(IF(V.AGE >= 39 AND V.AGE <= 48, V.QTY, 0)) QTY40,
+               SUM(IF(V.AGE >= 49 AND V.AGE <= 58, V.QTY, 0)) QTY50,
+               SUM(IF(V.AGE >= 59 AND V.AGE <= 68, V.QTY, 0)) QTY60,
+               SUM(IF(V.AGE >= 69, V.QTY, 0)) QTY70,
+               SUM(IF(IFNULL(V.AGE, '') = '', V.QTY, 0)) QTY80,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P', V.QTY, 0)) PC_QTY,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE <= 18, V.QTY, 0)) PC_QTY10,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 19 AND V.AGE <= 28, V.QTY, 0)) PC_QTY20,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 29 AND V.AGE <= 38, V.QTY, 0)) PC_QTY30,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 39 AND V.AGE <= 48, V.QTY, 0)) PC_QTY40,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 49 AND V.AGE <= 58, V.QTY, 0)) PC_QTY50,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 59 AND V.AGE <= 68, V.QTY, 0)) PC_QTY60,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND V.AGE >= 69, V.QTY, 0)) PC_QTY70,
+               SUM(IF(IF(IFNULL(V.DEVICE, '') = '', 'P', V.DEVICE) = 'P' AND IFNULL(V.AGE, '') = '', V.QTY, 0)) PC_QTY80,
+               SUM(IF(V.DEVICE = 'M', V.QTY, 0)) MO_QTY,
+               SUM(IF(V.DEVICE = 'M' AND V.AGE <= 18, V.QTY, 0)) MO_QTY10,
+               SUM(IF(V.DEVICE = 'M' AND V.AGE >= 19 AND V.AGE <= 28, V.QTY, 0)) MO_QTY20,
+               SUM(IF(V.DEVICE = 'M' AND V.AGE >= 29 AND V.AGE <= 38, V.QTY, 0)) MO_QTY30,
+               SUM(IF(V.DEVICE = 'M' AND V.AGE >= 39 AND V.AGE <= 48, V.QTY, 0)) MO_QTY40,
+               SUM(IF(V.DEVICE = 'M' AND V.AGE >= 49 AND V.AGE <= 58, V.QTY, 0)) MO_QTY50,
+               SUM(IF(V.DEVICE = 'M' AND V.AGE >= 59 AND V.AGE <= 68, V.QTY, 0)) MO_QTY60,
+               SUM(IF(V.DEVICE = 'M' AND V.AGE >= 69, V.QTY, 0)) MO_QTY70,
+               SUM(IF(V.DEVICE = 'M' AND IFNULL(V.AGE, '') = '', V.QTY, 0)) MO_QTY80,
+               SUM(IF(V.DEVICE = 'A', V.QTY, 0)) AP_QTY,
+               SUM(IF(V.DEVICE = 'A' AND V.AGE <= 18, V.QTY, 0)) AP_QTY10,
+               SUM(IF(V.DEVICE = 'A' AND V.AGE >= 19 AND V.AGE <= 28, V.QTY, 0)) AP_QTY20,
+               SUM(IF(V.DEVICE = 'A' AND V.AGE >= 29 AND V.AGE <= 38, V.QTY, 0)) AP_QTY30,
+               SUM(IF(V.DEVICE = 'A' AND V.AGE >= 39 AND V.AGE <= 48, V.QTY, 0)) AP_QTY40,
+               SUM(IF(V.DEVICE = 'A' AND V.AGE >= 49 AND V.AGE <= 58, V.QTY, 0)) AP_QTY50,
+               SUM(IF(V.DEVICE = 'A' AND V.AGE >= 59 AND V.AGE <= 68, V.QTY, 0)) AP_QTY60,
+               SUM(IF(V.DEVICE = 'A' AND V.AGE >= 69, V.QTY, 0)) AP_QTY70,
+               SUM(IF(V.DEVICE = 'A' AND IFNULL(V.AGE, '') = '', V.QTY, 0)) AP_QTY80
+          FROM (
+                SELECT A.*, B.QTY, CAST(DATE_FORMAT(A.ODATE, '%Y') - SUBSTR(C.BIRTHDAY, 1, 4) AS UNSIGNED) AGE
+                  FROM T_ORDER A
+                        INNER JOIN (SELECT ORDERID, SUM(QTY) QTY FROM T_ORDER_ITEM GROUP BY ORDERID) B
+                            ON A.ORDERID = B.ORDERID
+                        INNER JOIN T_MEMBER C
+                            ON A.MEM_NO = C.MEM_NO
+                 WHERE A.GUBUN = 1
+                   AND A.STATUS IN (SELECT STATUS FROM T_ORDER_STATUS_CODE WHERE ORDER_TYPE = '1')
+                   AND A.STATUS <> '110'
+		]]>
+		<if test='@com.pntmall.common.mybatis.Check@notEquals(gubun, "2")'>
+		<![CDATA[
+				   AND A.ODATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+				   AND A.ODATE < DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+		]]>
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@equals(gubun, "2")'>
+		<![CDATA[
+				   AND A.ODATE >= STR_TO_DATE(CONCAT(#{sdate}, '.01'), '%Y.%m.%d')
+				   AND A.ODATE < DATE_ADD(STR_TO_DATE(CONCAT(#{edate}, '.01'), '%Y.%m.%d'), INTERVAL 1 MONTH)
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(orderGubun)">
+				   AND A.ORDER_GUBUN = #{orderGubun}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+				   AND A.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+               ) V
+		GROUP BY ${odate}
+		ORDER BY ${odate}
+	</select>	
+	
+	<select id="orderGenderList" parameterType="Param" resultType="Param">
+		<![CDATA[
+        SELECT ${odate} ODATE,
+               SUM(A.AMT) AMT,
+               SUM(IF(C.GENDER = 'M', A.AMT, 0)) M_AMT,
+               SUM(IF(C.GENDER = 'W', A.AMT, 0)) W_AMT,
+               SUM(IF(IFNULL(C.GENDER, '') = '', A.AMT, 0)) N_AMT,
+               SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.AMT, 0)) PC_AMT,
+               SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P' AND C.GENDER = 'M', A.AMT, 0)) PC_M_AMT,
+               SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P' AND C.GENDER = 'W', A.AMT, 0)) PC_W_AMT,
+               SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P' AND IFNULL(C.GENDER, '') = '', A.AMT, 0)) PC_N_AMT,
+               SUM(IF(A.DEVICE = 'M', A.AMT, 0)) MO_AMT,
+               SUM(IF(A.DEVICE = 'M' AND C.GENDER = 'M', A.AMT, 0)) MO_M_AMT,
+               SUM(IF(A.DEVICE = 'M' AND C.GENDER = 'W', A.AMT, 0)) MO_W_AMT,
+               SUM(IF(A.DEVICE = 'M' AND IFNULL(C.GENDER, '') = '', A.AMT, 0)) MO_N_AMT,
+               SUM(IF(A.DEVICE = 'A', A.AMT, 0)) AP_AMT,
+               SUM(IF(A.DEVICE = 'A' AND C.GENDER = 'M', A.AMT, 0)) AP_M_AMT,
+               SUM(IF(A.DEVICE = 'A' AND C.GENDER = 'W', A.AMT, 0)) AP_W_AMT,
+               SUM(IF(A.DEVICE = 'A' AND IFNULL(C.GENDER, '') = '', A.AMT, 0)) AP_N_AMT,
+               COUNT(DISTINCT(A.ORDERID)) CNT, 
+               COUNT(DISTINCT(IF(C.GENDER = 'M', A.ORDERID, NULL))) M_CNT,
+               COUNT(DISTINCT(IF(C.GENDER = 'W', A.ORDERID, NULL))) W_CNT,
+               COUNT(DISTINCT(IF(IFNULL(C.GENDER, '') = '', A.ORDERID, NULL))) N_CNT,
+               COUNT(DISTINCT(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.ORDERID, NULL))) PC_CNT,
+               COUNT(DISTINCT(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P' AND C.GENDER = 'M', A.ORDERID, NULL))) PC_M_CNT,
+               COUNT(DISTINCT(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P' AND C.GENDER = 'W', A.ORDERID, NULL))) PC_W_CNT,
+               COUNT(DISTINCT(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P' AND IFNULL(C.GENDER, '') = '', A.ORDERID, NULL))) PC_N_CNT,
+               COUNT(DISTINCT(IF(A.DEVICE = 'M', A.ORDERID, NULL))) MO_CNT,
+               COUNT(DISTINCT(IF(A.DEVICE = 'M' AND C.GENDER = 'M', A.ORDERID, NULL))) MO_M_CNT,
+               COUNT(DISTINCT(IF(A.DEVICE = 'M' AND C.GENDER = 'W', A.ORDERID, NULL))) MO_W_CNT,
+               COUNT(DISTINCT(IF(A.DEVICE = 'M' AND IFNULL(C.GENDER, '') = '', A.ORDERID, NULL))) MO_N_CNT,
+               COUNT(DISTINCT(IF(A.DEVICE = 'A', A.ORDERID, NULL))) AP_CNT,
+               COUNT(DISTINCT(IF(A.DEVICE = 'A' AND C.GENDER = 'M', A.ORDERID, NULL))) AP_M_CNT,
+               COUNT(DISTINCT(IF(A.DEVICE = 'A' AND C.GENDER = 'W', A.ORDERID, NULL))) AP_W_CNT,
+               COUNT(DISTINCT(IF(A.DEVICE = 'A' AND IFNULL(C.GENDER, '') = '', A.ORDERID, NULL))) AP_N_CNT,
+               COUNT(DISTINCT(A.MEM_NO)) MEM_CNT, 
+               COUNT(DISTINCT(IF(C.GENDER = 'M', A.MEM_NO, NULL))) M_MEM_CNT,
+               COUNT(DISTINCT(IF(C.GENDER = 'W', A.MEM_NO, NULL))) W_MEM_CNT,
+               COUNT(DISTINCT(IF(IFNULL(C.GENDER, '') = '', A.MEM_NO, NULL))) N_MEM_CNT,
+               COUNT(DISTINCT(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', A.MEM_NO, NULL))) PC_MEM_CNT,
+               COUNT(DISTINCT(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P' AND C.GENDER = 'M', A.MEM_NO, NULL))) PC_M_MEM_CNT,
+               COUNT(DISTINCT(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P' AND C.GENDER = 'W', A.MEM_NO, NULL))) PC_W_MEM_CNT,
+               COUNT(DISTINCT(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P' AND IFNULL(C.GENDER, '') = '', A.MEM_NO, NULL))) PC_N_MEM_CNT,
+               COUNT(DISTINCT(IF(A.DEVICE = 'M', A.MEM_NO, NULL))) MO_MEM_CNT,
+               COUNT(DISTINCT(IF(A.DEVICE = 'M' AND C.GENDER = 'M', A.MEM_NO, NULL))) MO_M_MEM_CNT,
+               COUNT(DISTINCT(IF(A.DEVICE = 'M' AND C.GENDER = 'W', A.MEM_NO, NULL))) MO_W_MEM_CNT,
+               COUNT(DISTINCT(IF(A.DEVICE = 'M' AND IFNULL(C.GENDER, '') = '', A.MEM_NO, NULL))) MO_N_MEM_CNT,
+               COUNT(DISTINCT(IF(A.DEVICE = 'A', A.MEM_NO, NULL))) AP_MEM_CNT,
+               COUNT(DISTINCT(IF(A.DEVICE = 'A' AND C.GENDER = 'M', A.MEM_NO, NULL))) AP_M_MEM_CNT,
+               COUNT(DISTINCT(IF(A.DEVICE = 'A' AND C.GENDER = 'W', A.MEM_NO, NULL))) AP_W_MEM_CNT,
+               COUNT(DISTINCT(IF(A.DEVICE = 'A' AND IFNULL(C.GENDER, '') = '', A.MEM_NO, NULL))) AP_N_MEM_CNT,
+               SUM(B.QTY) QTY,
+               SUM(IF(C.GENDER = 'M', B.QTY, 0)) M_QTY,
+               SUM(IF(C.GENDER = 'W', B.QTY, 0)) W_QTY,
+               SUM(IF(IFNULL(C.GENDER, '') = '', B.QTY, 0)) N_QTY,
+               SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P', B.QTY, 0)) PC_QTY,
+               SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P' AND C.GENDER = 'M', B.QTY, 0)) PC_M_QTY,
+               SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P' AND C.GENDER = 'W', B.QTY, 0)) PC_W_QTY,
+               SUM(IF(IF(IFNULL(A.DEVICE, '') = '', 'P', A.DEVICE) = 'P' AND IFNULL(C.GENDER, '') = '', B.QTY, 0)) PC_N_QTY,
+               SUM(IF(A.DEVICE = 'M', B.QTY, 0)) MO_QTY,
+               SUM(IF(A.DEVICE = 'M' AND C.GENDER = 'M', B.QTY, 0)) MO_M_QTY,
+               SUM(IF(A.DEVICE = 'M' AND C.GENDER = 'W', B.QTY, 0)) MO_W_QTY,
+               SUM(IF(A.DEVICE = 'M' AND IFNULL(C.GENDER, '') = '', B.QTY, 0)) MO_N_QTY,
+               SUM(IF(A.DEVICE = 'A', B.QTY, 0)) AP_QTY,
+               SUM(IF(A.DEVICE = 'A' AND C.GENDER = 'M', B.QTY, 0)) AP_M_QTY,
+               SUM(IF(A.DEVICE = 'A' AND C.GENDER = 'W', B.QTY, 0)) AP_W_QTY,
+               SUM(IF(A.DEVICE = 'A' AND IFNULL(C.GENDER, '') = '', B.QTY, 0)) AP_N_QTY
+          FROM T_ORDER A
+                INNER JOIN (SELECT ORDERID, SUM(QTY) QTY FROM T_ORDER_ITEM GROUP BY ORDERID) B
+                    ON A.ORDERID = B.ORDERID
+                INNER JOIN T_MEMBER C
+                    ON A.MEM_NO = C.MEM_NO
+         WHERE A.GUBUN = 1
+           AND A.STATUS IN (SELECT STATUS FROM T_ORDER_STATUS_CODE WHERE ORDER_TYPE = '1')
+           AND A.STATUS <> '110'
+		]]>
+		<if test='@com.pntmall.common.mybatis.Check@notEquals(gubun, "2")'>
+		<![CDATA[
+		   AND A.ODATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		   AND A.ODATE < DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+		]]>
+		</if>
+		<if test='@com.pntmall.common.mybatis.Check@equals(gubun, "2")'>
+		<![CDATA[
+		   AND A.ODATE >= STR_TO_DATE(CONCAT(#{sdate}, '.01'), '%Y.%m.%d')
+		   AND A.ODATE < DATE_ADD(STR_TO_DATE(CONCAT(#{edate}, '.01'), '%Y.%m.%d'), INTERVAL 1 MONTH)
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(orderGubun)">
+		   AND A.ORDER_GUBUN = #{orderGubun}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicMemNo)">
+		   AND A.CLINIC_MEM_NO = #{clinicMemNo}
+		</if>
+		GROUP BY ${odate}
+		ORDER BY ${odate}
+	</select>	
+	
+</mapper>

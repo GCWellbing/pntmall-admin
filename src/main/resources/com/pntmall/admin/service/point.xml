@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Point">
+	<select id="currentInfo" parameterType="java.lang.Integer" resultType="Point">
+		SELECT PNO,
+			   MEM_NO,
+			   CUR_POINT,
+			   PREV_POINT,
+			   POINT,
+			   REASON,
+			   EDATE
+		  FROM T_POINT
+		 WHERE PNO = (SELECT MAX(PNO) FROM T_POINT WHERE MEM_NO = #{memNo})
+	</select>
+
+	<select id="infoForUse" parameterType="java.lang.Integer" resultType="Point">
+		SELECT PNO,
+			   MEM_NO,
+			   CUR_POINT,
+			   USE_POINT,
+			   BALANCE
+		  FROM T_POINT
+		 WHERE MEM_NO = #{memNo}
+		   AND EDATE >= DATE_FORMAT(NOW(), '%Y.%m.%d')
+		   AND BALANCE > 0
+		ORDER BY PNO
+		LIMIT 1
+	</select>
+
+	<insert id="insert" parameterType="Point">
+		INSERT INTO T_POINT (
+			MEM_NO,
+			CUR_POINT,
+			PREV_POINT,
+			POINT,
+			REASON,
+			EDATE,
+			USE_POINT,
+			BALANCE,
+			CDATE,
+			CUSER,
+			ORDERID
+		) VALUES (
+			#{memNo},
+			#{curPoint},
+			#{prevPoint},
+			#{point},
+			#{reason},
+			#{edate},
+			#{usePoint},
+			#{balance},
+			NOW(),
+			#{cuser},
+			#{orderid}
+		)
+	</insert>
+
+	<insert id="insertUse" parameterType="Point">
+		INSERT INTO T_POINT_USE (
+			PNO,
+			USE_POINT,
+			ORDERID,
+			CDATE
+		) VALUES (
+			#{pno},
+			#{usePoint},
+			#{orderid},
+			NOW()
+		)
+	</insert>
+
+	<update id="updateUse" parameterType="Point">
+		UPDATE T_POINT
+		   SET USE_POINT	= USE_POINT + #{usePoint},
+		   	   BALANCE		= BALANCE - #{usePoint}
+		 WHERE PNO			= #{pno}
+	</update>
+
+	<select id="logList" parameterType="PointSearch" resultType="Point">
+		SELECT A.PNO,
+			   A.MEM_NO,
+			   A.CUR_POINT,
+			   A.PREV_POINT,
+			   A.POINT,
+			   A.REASON,
+			   A.EDATE,
+			   A.USE_POINT,
+			   A.BALANCE,
+			   A.CDATE,
+			   A.ORDERID,
+			   B.MEM_ID,
+			   B.NAME MEM_NAME,
+			   C.NAME REASON_NAME,
+			   D.NAME GRADE_NAME
+		  FROM T_POINT A
+		  		INNER JOIN T_MEMBER B
+		  			ON A.MEM_NO = B.MEM_NO
+		  		INNER JOIN T_CODE C
+		  			ON A.REASON = CONCAT(C.CODE1, CODE2)
+		  		INNER JOIN T_MEM_GRADE D
+		  			ON B.GRADE_NO = D.GRADE_NO
+		 WHERE 1 = 1
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(sdate)">
+		   AND A.CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(edate)">
+		<![CDATA[
+		   AND A.CDATE < DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gubun)">
+			<if test='@com.pntmall.common.mybatis.Check@equals(gubun, "1")'>
+		   AND A.POINT >= 0
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(gubun, "2")'>
+			<![CDATA[
+		   AND A.POINT < 0
+			]]>
+			</if>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(reason)">
+		   AND A.REASON = #{reason}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memId)">
+		   AND B.MEM_ID LIKE CONCAT('%', #{memId}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memNo)">
+		   AND A.MEM_NO = #{memNo}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(orderid)">
+		   AND A.ORDERID = #{orderid}
+		</if>
+		ORDER BY A.PNO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="logCount" parameterType="PointSearch" resultType="java.lang.Integer">
+		SELECT COUNT(*)
+		  FROM T_POINT A
+		  		INNER JOIN T_MEMBER B
+		  			ON A.MEM_NO = B.MEM_NO
+		  		INNER JOIN T_CODE C
+		  			ON A.REASON = CONCAT(C.CODE1, CODE2)
+		 WHERE 1 = 1
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(sdate)">
+		   AND A.CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(edate)">
+		<![CDATA[
+		   AND A.CDATE < DATE_ADD(STR_TO_DATE(#{edate}, '%Y.%m.%d'), INTERVAL 1 DAY)
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gubun)">
+			<if test='@com.pntmall.common.mybatis.Check@equals(gubun, "1")'>
+		   AND A.POINT >= 0
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(gubun, "2")'>
+			<![CDATA[
+		   AND A.POINT < 0
+			]]>
+			</if>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(reason)">
+		   AND A.REASON = #{reason}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memId)">
+		   AND B.MEM_ID LIKE CONCAT('%', #{memId}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memNo)">
+		   AND A.MEM_NO = #{memNo}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(orderid)">
+		   AND A.ORDERID = #{orderid}
+		</if>
+	</select>
+
+	<select id="confList" resultType="PointConfig">
+		SELECT CNO,
+			   TYPE_NO,
+			   TYPE_NAME,
+			   TITLE,
+			   POINT,
+			   CUSER,
+			   CDATE
+		  FROM T_POINT_CONF
+		 WHERE CNO IN (SELECT MAX(CNO) FROM T_POINT_CONF GROUP BY TYPE_NO)
+		ORDER BY TYPE_NO
+	</select>
+
+	<insert id="insertConf" parameterType="PointConfig">
+		INSERT INTO T_POINT_CONF (
+			TYPE_NO,
+			TYPE_NAME,
+			TITLE,
+			POINT,
+			CUSER,
+			CDATE
+		)
+		SELECT TYPE_NO,
+			   TYPE_NAME,
+			   TITLE,
+			   #{point},
+			   #{cuser},
+			   NOW()
+		  FROM T_POINT_CONF
+		 WHERE CNO = (SELECT MAX(CNO) FROM T_POINT_CONF WHERE TYPE_NO = #{typeNo})
+	</insert>
+
+	<select id="getPoint" resultType="java.lang.Integer" parameterType="String">
+		SELECT POINT
+		  FROM T_POINT_CONF
+		 WHERE CNO IN (SELECT MAX(CNO) FROM T_POINT_CONF GROUP BY TYPE_NO)
+		   AND TYPE_NO = #{typeNo}
+	</select>
+
+
+
+
+</mapper>

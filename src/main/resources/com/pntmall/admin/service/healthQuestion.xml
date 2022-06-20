@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="HealthQuestion">
+
+    <select id="info" parameterType="java.lang.Integer" resultType="HealthQuestion">
+        SELECT HEALTH_NO,
+        QUESTION,
+        TYPE,
+        NA_YN,
+        ETC_YN,
+        POPUP_YN,
+        CUSER,
+        CDATE,
+        UUSER,
+        UDATE,
+        <include refid="Common.userid">
+            <property name="alias" value="A"/>
+        </include>
+        FROM t_health_question A
+        WHERE HEALTH_NO = #{healthNo}
+    </select>
+
+    <insert id="insert" parameterType="HealthQuestion">
+        INSERT INTO t_health_question (HEALTH_NO,
+                                       QUESTION,
+                                       TYPE,
+                                       NA_YN,
+                                       ETC_YN,
+                                       POPUP_YN,
+                                       CUSER,
+                                       CDATE,
+                                       UUSER,
+                                       UDATE)
+        VALUES (#{healthNo},
+                #{question},
+                #{type},
+                #{naYn},
+                #{etcYn},
+                #{popupYn},
+                #{cuser},
+                NOW(),
+                #{cuser},
+                NOW())
+    </insert>
+
+    <update id="update" parameterType="HealthQuestion">
+        UPDATE t_health_question
+        SET HEALTH_NO = #{healthNo},
+            QUESTION  = #{question},
+            TYPE      = #{type},
+            NA_YN     = #{naYn},
+            ETC_YN    = #{etcYn},
+            POPUP_YN  = #{popupYn},
+            UUSER     = #{cuser},
+            UDATE     = NOW()
+        WHERE HEALTH_NO = #{healthNo}
+    </update>
+
+
+    <select id="listExample" resultType="HealthExample">
+		<![CDATA[
+        SELECT HEALTH_NO,
+               EX_NO,
+               EXAMPLE,
+               POINT,
+               PRODUCT_FUN,
+               REPORT,
+               WARNING,
+               RANK
+        FROM t_health_example
+        WHERE HEALTH_NO = #{healthNo}
+        ORDER BY RANK
+        ]]>
+	</select>
+
+    <insert id="insertExample" parameterType="HealthExample">
+        INSERT INTO t_health_example (HEALTH_NO,
+                                      EX_NO,
+                                      EXAMPLE,
+                                      POINT,
+                                      PRODUCT_FUN,
+                                      REPORT,
+                                      WARNING,
+                                      RANK)
+        VALUES (#{healthNo},
+                #{exNo},
+                #{example},
+                #{point},
+                #{productFun},
+                #{report},
+                #{warning},
+                #{rank})
+    </insert>
+
+    <update id="updateExample" parameterType="HealthExample">
+        UPDATE t_health_example
+        SET HEALTH_NO   = #{healthNo},
+            EX_NO       = #{exNo},
+            EXAMPLE     = #{example},
+            POINT       = #{point},
+            PRODUCT_FUN = #{productFun},
+            REPORT      = #{report},
+            WARNING     = #{warning},
+            RANK        = #{rank}
+        WHERE HEALTH_NO = #{healthNo}
+    </update>
+
+    <update id="deleteExample" parameterType="java.lang.Integer">
+        DELETE
+        FROM t_health_example
+        WHERE HEALTH_NO = #{healthNo}
+    </update>
+
+    <select id="listProduct" resultType="HealthExample">
+		<![CDATA[
+        SELECT A.HEALTH_NO,
+               A.EX_NO,
+               A.PNO,
+               B.PNAME
+        FROM t_health_ex_product A
+                 INNER JOIN T_PRODUCT B
+                            ON A.pno = b.pno
+        WHERE HEALTH_NO = #{healthNo}
+          AND B.STATUS = 'S'
+          AND B.PTYPE = 1
+        ]]>
+	</select>
+
+    <insert id="insertProduct" parameterType="HealthExample">
+        INSERT INTO t_health_ex_product (HEALTH_NO,
+                                         EX_NO,
+                                         PNO)
+        VALUES (#{healthNo},
+                #{exNo},
+                #{pno})
+    </insert>
+
+    <update id="deleteProduct" parameterType="java.lang.Integer">
+        DELETE
+        FROM t_health_ex_product
+        WHERE HEALTH_NO = #{healthNo}
+    </update>
+
+    <select id="listNutrition" resultType="HealthExample">
+		<![CDATA[
+        SELECT A.HEALTH_NO,
+               A.EX_NO,
+               A.NUTRITION_NO,
+               B.NAME NUTRITION_NAME
+        FROM t_health_ex_nutrition A
+                 INNER JOIN T_NUTRITION B
+                            ON A.NUTRITION_NO = B.NUTRITION_NO
+        WHERE A.HEALTH_NO = #{healthNo}
+          AND B.STATUS <> 'D'
+        ]]>
+	</select>
+
+    <insert id="insertNutrition" parameterType="HealthExample">
+        INSERT INTO t_health_ex_nutrition (HEALTH_NO,
+                                           EX_NO,
+                                           NUTRITION_NO)
+        VALUES (#{healthNo},
+                #{exNo},
+                #{nutritionNo})
+    </insert>
+
+    <update id="deleteNutrition" parameterType="java.lang.Integer">
+        DELETE
+        FROM t_health_ex_nutrition
+        WHERE HEALTH_NO = #{healthNo}
+    </update>
+
+</mapper>

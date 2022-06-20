@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Icon">
+	<select id="list" parameterType="java.lang.Integer" resultType="Icon">
+		<![CDATA[
+		SELECT ICON_NO,
+			   IMG,
+			   CONTENT,
+			   CASE WHEN STATUS = 'S' THEN '활성'
+			   		ELSE '비활성' END AS STATUS_NAME
+		  FROM T_ICON
+		 WHERE STATUS <> 'D'
+		ORDER BY RANK
+		]]>
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Icon">
+		SELECT ICON_NO,
+			   IMG,
+			   CONTENT,
+			   RANK,
+			   STATUS
+		  FROM T_ICON
+		 WHERE ICON_NO = #{iconNo}
+	</select>
+
+	<insert id="insert" parameterType="Icon">
+		INSERT INTO T_ICON (
+			IMG,
+			CONTENT,
+			RANK,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{img},
+			#{content},
+			#{rank},
+			#{status},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+	
+	<update id="update" parameterType="Icon">
+		UPDATE T_ICON
+		   SET IMG			= #{img},
+		   	   CONTENT		= #{content},
+		   	   RANK			= #{rank},
+		   	   STATUS		= #{status},
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE ICON_NO		= #{iconNo}
+	</update>
+
+	<update id="updateRank" parameterType="Icon">
+		UPDATE T_ICON
+		   SET RANK			= #{rank},
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE ICON_NO		= #{iconNo}
+	</update>
+
+	<update id="delete" parameterType="Icon">
+		UPDATE T_ICON
+		   SET STATUS		= 'D',
+		   	   UUSER		= #{cuser},
+		   	   UDATE		= NOW()
+		 WHERE ICON_NO		= #{iconNo}
+	</update>
+</mapper>

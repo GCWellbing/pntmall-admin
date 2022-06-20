@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Ingredient">
+	<select id="list" parameterType="IngredientSearch" resultType="Ingredient">
+		<![CDATA[
+		SELECT A.INO,
+			   A.TITLE,
+			   A.NUTRITION_NO,
+			   A.IMG,
+			   A.CONTENT,
+			   A.RANK,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_INGREDIENT A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		ORDER BY A.INO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="IngredientSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_INGREDIENT A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+	</select>
+
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Ingredient">
+		SELECT A.INO,
+			   A.TITLE,
+			   A.NUTRITION_NO,
+			   B.NAME NUTRITION_NAME,
+			   A.IMG,
+			   A.CONTENT,
+			   A.RANK,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_INGREDIENT A
+		  	   INNER JOIN T_NUTRITION B
+		  	   	       ON A.NUTRITION_NO = B.NUTRITION_NO
+		 WHERE INO = #{ino}
+	</select>
+
+	<insert id="insert" parameterType="Ingredient">
+		INSERT
+		  INTO T_INGREDIENT (
+			   TITLE,
+			   NUTRITION_NO,
+			   IMG,
+			   CONTENT,
+			   RANK,
+			   STATUS,
+			   CUSER,
+			   CDATE,
+			   UUSER,
+			   UDATE
+		) VALUES (
+			   #{title},
+			   #{nutritionNo},
+			   #{img},
+			   #{content},
+			   #{rank},
+			   #{status},
+			   #{cuser},
+			   NOW(),
+			   #{cuser},
+			   NOW()
+		)
+	</insert>
+
+	<update id="update" parameterType="Ingredient">
+		UPDATE T_INGREDIENT
+		   SET TITLE      	= #{title},
+			   NUTRITION_NO = #{nutritionNo},
+			   IMG     		= #{img},
+			   CONTENT 		= #{content},
+			   RANK       	= #{rank},
+			   STATUS     	= #{status},
+			   UUSER	  	= #{cuser},
+			   UDATE 	  	= NOW()
+		 WHERE INO 	  		= #{ino}
+	</update>
+
+</mapper>

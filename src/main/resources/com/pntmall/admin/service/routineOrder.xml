@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="RoutineOrder">
+	<select id="list" parameterType="RoutineOrderSearch" resultType="RoutineOrder">
+		<![CDATA[
+		SELECT O.ORDERID,
+			   O.CDATE,
+		       O.MEM_NO,
+		       O.SDATE,
+		       O.CNT,
+		       M.MEM_ID,
+		       M.NAME MEM_NAME,
+		       (SELECT P.PNAME 
+		          FROM T_ROUTINE_ORDER_ITEM I
+		         		INNER JOIN T_PRODUCT P
+		         			ON I.PNO = P.PNO
+		         WHERE I.ORDERID = O.ORDERID
+		        LIMIT 1) PNAME 
+		  FROM T_ROUTINE_ORDER O
+				LEFT OUTER JOIN T_MEMBER M
+					ON O.MEM_NO = M.MEM_NO
+		 WHERE 1 = 1
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(sdate)">
+		<![CDATA[
+		   AND O.CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(edate)">
+		<![CDATA[
+		   AND O.CDATE <= STR_TO_DATE(CONCAT(#{edate}, ' 23:59:59'), '%Y.%m.%d %H:%i:%s')
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(keyword)">
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "1")'>
+		   AND O.ORDERID LIKE CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "2")'>
+		   AND M.MEM_ID LIKE CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "3")'>
+		   AND O.ONAME LIKE CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "4")'>
+		   AND EXISTS (SELECT P.PNO
+		   	 			 FROM T_ROUTINE_ORDER_ITEM I 
+		   	 			 		INNER JOIN T_PRODUCT P
+		   	 			 			ON I.PNO = P.PNO
+		   	 			WHERE I.ORDERID = O.ORDERID
+		   	 			  AND P.PNAME LIKE CONCAT('%', #{keyword}, '%'))
+			</if>
+		</if>
+		ORDER BY O.ORDERID DESC
+		LIMIT #{limit} OFFSET #{offset} 
+	</select>
+
+	<select id="count" parameterType="RoutineOrderSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_ROUTINE_ORDER O
+				LEFT OUTER JOIN T_MEMBER M
+					ON O.MEM_NO = M.MEM_NO
+		 WHERE 1 = 1
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(sdate)">
+		<![CDATA[
+		   AND O.CDATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(edate)">
+		<![CDATA[
+		   AND O.CDATE <= STR_TO_DATE(CONCAT(#{edate}, ' 23:59:59'), '%Y.%m.%d %H:%i:%s')
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(keyword)">
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "1")'>
+		   AND O.ORDERID LIKE CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "2")'>
+		   AND M.MEM_ID LIKE CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "3")'>
+		   AND O.ONAME LIKE CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "4")'>
+		   AND EXISTS (SELECT P.PNO
+		   	 			 FROM T_ROUTINE_ORDER_ITEM I 
+		   	 			 		INNER JOIN T_PRODUCT P
+		   	 			 			ON I.PNO = P.PNO
+		   	 			WHERE I.ORDERID = O.ORDERID
+		   	 			  AND P.PNAME LIKE CONCAT('%', #{keyword}, '%'))
+			</if>
+		</if>
+	</select>
+
+	<select id="info" parameterType="java.lang.String" resultType="RoutineOrder">
+		SELECT O.ORDERID,
+			   O.MEM_NO,
+			   O.ONAME,
+			   O.OMTEL1,
+			   O.OMTEL2,
+			   O.OTEL1,
+			   O.OTEL2,
+			   O.OEMAIL,
+			   O.DEVICE,
+			   O.SDATE,
+			   O.PERIOD,
+			   O.CNT,
+			   O.PAY_TYPE,
+			   O.BILLINGKEY,
+			   O.PAY_LOG,
+			   O.CDATE,
+		       M.MEM_ID,
+		       M.NAME MEM_NAME,
+			   (SELECT MEMO FROM T_ORDER_MEMO 
+		         WHERE ORDERID = O.ORDERID ORDER BY MNO DESC LIMIT 1) MEMO
+		  FROM T_ROUTINE_ORDER O
+				LEFT OUTER JOIN T_MEMBER M
+					ON O.MEM_NO = M.MEM_NO
+		 WHERE O.ORDERID = #{orderid}
+	</select>
+	
+	<select id="itemList" parameterType="java.lang.String" resultType="RoutineOrderItem">
+		SELECT A.ITEM_NO,
+			   A.ORDERID,
+			   A.PNO,
+			   A.QTY,
+			   P.PNAME,
+			   P.COLD_YN,
+			   P.SALE_PRICE,
+			   P.MATNR,
+ 			   F_PRICE(A.PNO, M.GRADE_NO) MEM_PRICE
+		  FROM T_ROUTINE_ORDER_ITEM A
+				INNER JOIN T_ROUTINE_ORDER B
+					ON A.ORDERID = B.ORDERID
+				INNER JOIN T_MEMBER M
+					ON B.MEM_NO = M.MEM_NO
+		  		INNER JOIN T_PRODUCT P
+		  			ON A.PNO = P.PNO
+		 WHERE A.ORDERID = #{orderid}
+	</select>
+	
+	<select id="dateList" parameterType="java.lang.String" resultType="RoutineOrderDate">
+		SELECT A.DNO,
+			   A.ORDERID,
+			   A.PAY_DATE,
+			   A.STATUS,
+			   IFNULL(A.RORDERID, '-') RORDERID,
+			   A.CDATE,
+			   B.PAY_AMT,
+			   IFNULL((SELECT BO_NAME FROM T_ORDER_STATUS_CODE WHERE STATUS = B.STATUS), '-') STATUS_NAME
+		  FROM T_ROUTINE_ORDER_DATE A
+		  		LEFT OUTER JOIN T_ORDER B
+		  			ON A.RORDERID = B.ORDERID
+		 WHERE A.ORDERID = #{orderid}
+		ORDER BY A.PAY_DATE
+	</select> 
+
+	<update id="updateDate" parameterType="RoutineOrderDate">
+		UPDATE T_ROUTINE_ORDER_DATE
+		   SET UUSER	= #{cuser},
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(payDate)">
+		   	   PAY_DATE = #{payDate},
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   	   STATUS	= #{status},
+		</if>
+		   	   UDATE	= NOW()
+		 WHERE DNO		= #{dno} 
+	</update>
+
+	<insert id="insertDateLog" parameterType="java.lang.Integer">
+		INSERT INTO T_ROUTINE_ORDER_DATE_LOG (
+			DNO,
+			ORDERID,
+			PAY_DATE,
+			STATUS,
+			RORDERID,
+			CDATE,
+			UDATE,
+			UUSER
+		) 
+		SELECT DNO,
+			   ORDERID,
+			   PAY_DATE,
+			   STATUS,
+			   RORDERID,
+			   CDATE,
+			   UDATE,
+			   UUSER
+		  FROM T_ROUTINE_ORDER_DATE
+		 WHERE DNO = #{dno}
+	</insert>
+
+
+
+
+
+</mapper>

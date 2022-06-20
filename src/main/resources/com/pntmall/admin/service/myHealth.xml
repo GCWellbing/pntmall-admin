@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="MyHealth">
+
+	<select id="list" parameterType="MyHealth" resultType="MyHealth">
+		<![CDATA[
+		SELECT A.*,
+			   (SELECT RES_NO
+				FROM T_RESERVATION
+				WHERE CATE = '016005'
+				  AND STATUS <> '025002'
+				  AND HEALTH_SEQ = A.HEALTH_SEQ
+				ORDER BY RES_NO DESC
+				   LIMIT 1) RES_NO,
+		       (SELECT COUNT(*) FROM T_MY_HEALTH_TOPIC WHERE HEALTH_SEQ = A.HEALTH_SEQ AND GUBUN = '1') TOPIC_COUNT,
+			   (SELECT TITLE FROM T_HEALTH_TOPIC WHERE HEALTH_NO = HEALTH_TOPIC1) HEALTH_TOPIC_NAME1,
+			   (SELECT TITLE FROM T_HEALTH_TOPIC WHERE HEALTH_NO = HEALTH_TOPIC2) HEALTH_TOPIC_NAME2,
+			   (SELECT TITLE FROM T_HEALTH_TOPIC WHERE HEALTH_NO = HEALTH_TOPIC3) HEALTH_TOPIC_NAME3
+		FROM (
+				 SELECT *,
+						CASE CDTION
+							WHEN '1' THEN '저체중'
+							WHEN '2' THEN '정상체중'
+							WHEN '3' THEN '과체중'
+							WHEN '4' THEN '비만'
+							WHEN '5' THEN '고도비만'
+							END AS                                                         CDTION_NAME,
+						SUBSTRING_INDEX(MY.HEALTH_TOPIC, ',', 1)                           HEALTH_TOPIC1,
+						SUBSTRING_INDEX(SUBSTRING_INDEX(MY.HEALTH_TOPIC, ',', 2), ',', -1) HEALTH_TOPIC2,
+						SUBSTRING_INDEX(MY.HEALTH_TOPIC, ',', -1)                          HEALTH_TOPIC3
+				 FROM T_MY_HEALTH MY
+				 WHERE MY.HEALTH_SEQ > 0
+				   AND MY.STATUS = 'S'
+				   AND MY.CUSER = #{cuser}
+			 ) A
+		ORDER BY HEALTH_SEQ DESC
+			LIMIT #{limit} OFFSET #{offset}
+		]]>
+	</select>
+
+	<select id="count" parameterType="MyHealth" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*) CNT
+		FROM T_MY_HEALTH MY
+		WHERE MY.HEALTH_SEQ > 0
+		  AND MY.CUSER = #{cuser}
+		  AND MY.STATUS = 'S'
+		]]>
+	</select>
+
+</mapper>

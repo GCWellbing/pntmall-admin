@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="StatMember">
+	<select id="joinTotal" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT (SELECT SUM(DAY_CNT) FROM T_STAT_DAY_MEMBER WHERE YMD < REPLACE(#{sdate},'.','') ) TOTAL_BEFORE,
+               (SELECT SUM(M_CNT) - SUM(SECEDE_M_CNT) FROM T_STAT_DAY_MEMBER WHERE YMD < REPLACE(#{sdate},'.','') ) TOTAL_M_BEFORE,
+               (SELECT SUM(F_CNT) - SUM(SECEDE_F_CNT) FROM T_STAT_DAY_MEMBER WHERE YMD < REPLACE(#{sdate},'.','') ) TOTAL_F_BEFORE,
+               (SELECT SUM(NOSEX_CNT) - SUM(SECEDE_NOSEX_CNT) FROM T_STAT_DAY_MEMBER WHERE YMD < REPLACE(#{sdate},'.','') ) TOTAL_NOSEX_BEFORE,
+               SUM(DAY_CNT) SUM_DAY_CNT,
+               SUM(PC_CNT) SUM_PC_CNT,
+               SUM(MO_CNT) SUM_MO_CNT,
+               SUM(APP_CNT) SUM_APP_CNT,
+               SUM(SLEEP_CNT) SUM_SLEEP_CNT,
+		       SUM(M_CNT) SUM_M_CNT,
+		       SUM(F_CNT) SUM_F_CNT,
+		       SUM(NOSEX_CNT) SUM_NOSEX_CNT,
+		       SUM(SECEDE_M_CNT) SUM_SECEDE_M_CNT,
+		       SUM(SECEDE_F_CNT) SUM_SECEDE_F_CNT,
+		       SUM(SECEDE_NOSEX_CNT) SUM_SECEDE_NOSEX_CNT,
+		       SUM(SECEDE_M_CNT+SECEDE_F_CNT+SECEDE_NOSEX_CNT) SUM_SECEDE_CNT
+		  FROM T_STAT_DAY_MEMBER
+		 WHERE YMD >= replace(#{sdate},'.','')
+		   AND YMD <= replace(#{edate},'.','')
+		]]>
+	</select>
+
+	<select id="joinList" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m%d'),'%Y-%m-%d') YMD,
+		       DAY_CNT,
+		       PC_CNT,
+		       MO_CNT,
+		       APP_CNT,
+		       SLEEP_CNT,
+		       (SECEDE_M_CNT+SECEDE_F_CNT+SECEDE_NOSEX_CNT) SECEDE_CNT,
+		       (M_CNT-SECEDE_M_CNT) M_CNT,
+		       (F_CNT-SECEDE_F_CNT) F_CNT,
+		       (NOSEX_CNT-SECEDE_NOSEX_CNT) NOSEX_CNT
+		  FROM T_STAT_DAY_MEMBER
+		 WHERE YMD >= replace(#{sdate},'.','')
+		   AND YMD <= replace(#{edate},'.','')
+		 ORDER BY YMD
+		]]>
+	</select>
+
+	<select id="joinMonthList" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m'),'%Y-%m') YMD,
+		       SUM(DAY_CNT) DAY_CNT,
+		       SUM(PC_CNT) PC_CNT,
+		       SUM(MO_CNT) MO_CNT,
+		       SUM(APP_CNT) APP_CNT,
+		       SUM(SLEEP_CNT) SLEEP_CNT,
+		       SUM((SECEDE_M_CNT+SECEDE_F_CNT+SECEDE_NOSEX_CNT)) SECEDE_CNT,
+		       SUM(SECEDE_M_CNT) SECEDE_M_CNT,
+		       SUM(SECEDE_F_CNT) SECEDE_F_CNT,
+		       SUM(SECEDE_NOSEX_CNT) SECEDE_NOSEX_CNT,
+		       SUM(M_CNT) M_CNT,
+		       SUM(F_CNT) F_CNT,
+		       SUM(NOSEX_CNT) NOSEX_CNT
+		  FROM T_STAT_DAY_MEMBER
+		 WHERE YMD >= replace(#{sdate},'.','')
+		   AND YMD <= replace(#{edate},'.','')
+		 GROUP BY DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m'),'%Y-%m')
+		 ORDER BY YMD
+		]]>
+	</select>
+
+
+	<select id="joinGenderList" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m%d'),'%Y-%m-%d') YMD,
+		       DAY_CNT,
+		       (M_CNT-SECEDE_M_CNT) M_CNT,
+		       (F_CNT-SECEDE_F_CNT) F_CNT,
+		       (NOSEX_CNT-SECEDE_NOSEX_CNT) NOSEX_CNT
+		  FROM T_STAT_DAY_MEMBER
+		 WHERE YMD >= replace(#{sdate},'.','')
+		   AND YMD <= replace(#{edate},'.','')
+		 ORDER BY YMD
+		]]>
+	</select>
+
+	<select id="ageTotal" parameterType="Param" resultType="Param">
+		<![CDATA[
+			SELECT (A.BEFORE_CNT - B.SECEDE_CNT) BEFORE_CNT
+			     , (A.BEFORE_CNT10 - B.SECEDE_CNT10) BEFORE_CNT10
+			     , (A.BEFORE_CNT20 - B.SECEDE_CNT20) BEFORE_CNT20
+			     , (A.BEFORE_CNT30 - B.SECEDE_CNT30) BEFORE_CNT30
+			     , (A.BEFORE_CNT40 - B.SECEDE_CNT40) BEFORE_CNT40
+			     , (A.BEFORE_CNT50 - B.SECEDE_CNT50) BEFORE_CNT50
+			     , (A.BEFORE_CNT60 - B.SECEDE_CNT60) BEFORE_CNT60
+			     , (A.BEFORE_CNT70 - B.SECEDE_CNT70) BEFORE_CNT70
+			     , (A.BEFORE_NON_CNT - B.SECEDE_NON_CNT) BEFORE_NON_CNT
+			  FROM
+			        (SELECT 'SUMMARY' SUMMARY
+			             , COUNT(*) BEFORE_CNT
+						 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) <= '1' ,1,0)) BEFORE_CNT10
+						 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '2' ,1,0)) BEFORE_CNT20
+						 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '3' ,1,0)) BEFORE_CNT30
+						 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '4' ,1,0)) BEFORE_CNT40
+						 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '5' ,1,0)) BEFORE_CNT50
+						 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '6' ,1,0)) BEFORE_CNT60
+						 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) >= '7' ,1,0)) BEFORE_CNT70
+					     , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) is null ,1,0)) BEFORE_NON_CNT
+					  FROM T_MEMBER
+					 WHERE IFNULL(CLINIC_YN,'N') = 'N'
+					 AND DATE_FORMAT(CDATE,'%Y%m%d') < REPLACE(#{sdate},'.','') ) A,
+					(SELECT 'SUMMARY' SUMMARY
+			             , COUNT(*) SECEDE_CNT
+						 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) <= '1' ,1,0)) SECEDE_CNT10
+						 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '2' ,1,0)) SECEDE_CNT20
+						 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '3' ,1,0)) SECEDE_CNT30
+						 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '4' ,1,0)) SECEDE_CNT40
+						 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '5' ,1,0)) SECEDE_CNT50
+						 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '6' ,1,0)) SECEDE_CNT60
+						 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) >= '7' ,1,0)) SECEDE_CNT70
+					     , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) is null ,1,0)) SECEDE_NON_CNT
+					  FROM T_MEMBER
+					 WHERE IFNULL(CLINIC_YN,'N') = 'N'
+					 AND STATUS IN ('D','E')
+					 AND DATE_FORMAT(UDATE,'%Y%m%d') < REPLACE(#{sdate},'.','')) B
+			 WHERE A.SUMMARY = B.SUMMARY
+		]]>
+	</select>
+
+	<select id="ageList" parameterType="Param" resultType="Param">
+		<![CDATA[
+			SELECT DATE_FORMAT(STR_TO_DATE(D.YMD, '%Y%m%d'),'%Y-%m-%d') YMD
+			     , IFNULL(A.DAY_CNT, 0) - IFNULL(B.SECEDE_CNT, 0) DAY_CNT
+			     , IFNULL(A.CNT10, 0) - IFNULL(B.SECEDE_CNT10, 0) CNT10
+			     , IFNULL(A.CNT20, 0) - IFNULL(B.SECEDE_CNT20, 0) CNT20
+			     , IFNULL(A.CNT30, 0) - IFNULL(B.SECEDE_CNT30, 0) CNT30
+			     , IFNULL(A.CNT40, 0) - IFNULL(B.SECEDE_CNT40, 0) CNT40
+			     , IFNULL(A.CNT50, 0) - IFNULL(B.SECEDE_CNT50, 0) CNT50
+			     , IFNULL(A.CNT60, 0) - IFNULL(B.SECEDE_CNT60, 0) CNT60
+			     , IFNULL(A.CNT70, 0) - IFNULL(B.SECEDE_CNT70, 0) CNT70
+			     , IFNULL(A.NON_CNT, 0) - IFNULL(B.SECEDE_NON_CNT, 0) NON_CNT
+			  FROM T_DATE D
+					LEFT OUTER JOIN (
+						SELECT DATE_FORMAT(CDATE,'%Y%m%d') YMD
+						     , COUNT(*) DAY_CNT
+							 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) <= '1' ,1,0)) CNT10
+							 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '2' ,1,0)) CNT20
+							 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '3' ,1,0)) CNT30
+							 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '4' ,1,0)) CNT40
+							 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '5' ,1,0)) CNT50
+							 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '6' ,1,0)) CNT60
+							 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) >= '7' ,1,0)) CNT70
+						     , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) is null ,1,0)) NON_CNT
+						  FROM T_MEMBER
+						 WHERE DATE_FORMAT(CDATE,'%Y%m%d') >= replace(#{sdate},'.','')
+						   AND DATE_FORMAT(CDATE,'%Y%m%d') <= replace(#{edate},'.','')
+						   AND IFNULL(CLINIC_YN,'N') = 'N'
+					     GROUP BY DATE_FORMAT(CDATE,'%Y%m%d') ) A
+			          ON D.YMD = A.YMD
+				    LEFT OUTER JOIN (
+						SELECT DATE_FORMAT(UDATE,'%Y%m%d') YMD
+						     , COUNT(*) SECEDE_CNT
+							 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) <= '1' ,1,0)) SECEDE_CNT10
+							 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '2' ,1,0)) SECEDE_CNT20
+							 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '3' ,1,0)) SECEDE_CNT30
+							 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '4' ,1,0)) SECEDE_CNT40
+							 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '5' ,1,0)) SECEDE_CNT50
+							 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) = '6' ,1,0)) SECEDE_CNT60
+							 , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) >= '7' ,1,0)) SECEDE_CNT70
+						     , SUM(IF(SUBSTR(DATE_FORMAT(NOW(),'%Y') - SUBSTR(birthday,1,4)+1,1,1) is null ,1,0)) SECEDE_non_CNT
+						  FROM T_MEMBER
+						 WHERE DATE_FORMAT(UDATE,'%Y%m%d') >= replace(#{sdate},'.','')
+						   AND DATE_FORMAT(UDATE,'%Y%m%d') <= replace(#{edate},'.','')
+						   AND IFNULL(CLINIC_YN,'N') = 'N'
+				           AND STATUS IN ('D','E')
+					     GROUP BY DATE_FORMAT(UDATE,'%Y%m%d') ) B
+			          ON D.YMD = B.YMD
+				 WHERE D.YMD >= replace(#{sdate},'.','')
+			   AND D.YMD <= replace(#{edate},'.','')
+			 ORDER BY D.YMD
+		]]>
+	</select>
+
+	<select id="visitList" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m%d'),'%Y-%m-%d') YMD,
+		       DAY_CNT,
+		       PC_CNT,
+		       MO_CNT,
+		       APP_CNT
+		  FROM T_STAT_DAY_VISIT_MEMBER
+		 WHERE YMD >= replace(#{sdate},'.','')
+		   AND YMD <= replace(#{edate},'.','')
+		 ORDER BY YMD
+		]]>
+	</select>
+
+	<select id="visitMonthList" parameterType="Param" resultType="Param">
+		<![CDATA[
+		SELECT DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m'),'%Y-%m') YMD,
+		       SUM(DAY_CNT) DAY_CNT,
+		       SUM(PC_CNT) PC_CNT,
+		       SUM(MO_CNT) MO_CNT,
+		       SUM(APP_CNT) APP_CNT
+		  FROM T_STAT_DAY_VISIT_MEMBER
+		 WHERE YMD >= replace(#{sdate},'.','')
+		   AND YMD <= replace(#{edate},'.','')
+		 GROUP BY DATE_FORMAT(STR_TO_DATE(YMD, '%Y%m'),'%Y-%m')
+		 ORDER BY YMD
+		]]>
+	</select>
+
+
+</mapper>

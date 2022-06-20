@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Set">
+
+	<select id="list" parameterType="SetSearch" resultType="Set">
+		<![CDATA[
+		SELECT A.SNO,
+			   A.TITLE,
+			   A.SDATE,
+			   A.EDATE,
+			   A.SUMMARY,
+			   A.IMG,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_SET A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromDate)">
+		<![CDATA[
+		   AND A.EDATE >= #{fromDate}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toDate)">
+		<![CDATA[
+		   AND A.SDATE <= #{toDate}
+	    ]]>
+		</if>
+		ORDER BY A.SNO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="SetSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_SET A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromDate)">
+		<![CDATA[
+		   AND A.EDATE >= #{fromDate}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toDate)">
+		<![CDATA[
+		   AND A.SDATE <= #{toDate}
+	    ]]>
+		</if>
+	</select>
+
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Set">
+		SELECT A.SNO,
+			   A.TITLE,
+			   A.SDATE,
+			   A.EDATE,
+			   A.SUMMARY,
+			   A.IMG,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_SET A
+		 WHERE SNO = #{sno}
+	</select>
+
+	<select id="productList" parameterType="java.lang.Integer" resultType="SetProduct">
+		<![CDATA[
+		SELECT A.SNO,
+			   A.PNO,
+			   A.RANK,
+			   B.PNAME,
+			   B.MATNR,
+			   B.SALE_PRICE
+		  FROM T_SET_PRODUCT A
+		  	   INNER JOIN T_PRODUCT B
+		  	   	ON A.PNO = B.PNO
+		 WHERE A.SNO = #{sno}
+	   	]]>
+	</select>
+
+	<insert id="insert" parameterType="Set" useGeneratedKeys="true" keyProperty="sno" keyColumn="SNO">
+		INSERT
+		  INTO T_SET (
+			   SNO,
+			   TITLE,
+			   SDATE,
+			   EDATE,
+			   SUMMARY,
+			   IMG,
+			   STATUS,
+			   CUSER,
+			   CDATE,
+			   UUSER,
+			   UDATE
+		) VALUES (
+			   #{sno},
+			   #{title},
+			   #{sdate},
+			   #{edate},
+			   #{summary},
+			   #{img},
+			   #{status},
+			   #{cuser},
+			   NOW(),
+			   #{cuser},
+			   NOW()
+		)
+	</insert>
+
+	<update id="update" parameterType="Set">
+		UPDATE T_SET
+		   SET TITLE 			= #{title},
+			   SDATE 			= #{sdate},
+			   EDATE 			= #{edate},
+			   SUMMARY 			= #{summary},
+			   IMG 				= #{img},
+			   STATUS 			= #{status},
+			   UUSER			= #{cuser},
+			   UDATE 			= NOW()
+		 WHERE SNO 				= #{sno}
+	</update>
+
+
+	<insert id="insertProduct" parameterType="SetProduct">
+		INSERT
+		  INTO T_SET_PRODUCT (
+			   SNO,
+			   PNO,
+			   RANK
+		) VALUES (
+			   #{sno},
+			   #{pno},
+			   #{rank}
+		)
+	</insert>
+
+	<delete id="deleteProduct" parameterType="java.lang.Integer">
+		DELETE FROM T_SET_PRODUCT
+		 WHERE SNO = #{sno}
+	</delete>
+
+</mapper>

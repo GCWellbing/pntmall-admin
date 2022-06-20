@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Pexhibition">
+	<select id="list" parameterType="PexhibitionSearch" resultType="Pexhibition">
+		<![CDATA[
+		SELECT A.SENO,
+			   A.TITLE,
+			   A.VIEW_CNT,
+			   A.SDATE,
+			   A.EDATE,
+			   A.SUMMARY,
+			   A.IMG,
+			   A.PC_DESC,
+			   A.MO_DESC,
+			   A.PRODUCT_YN,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_SPECIAL_EXHIBITION A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromDate)">
+		<![CDATA[
+		   AND A.EDATE >= #{fromDate}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toDate)">
+		<![CDATA[
+		   AND A.SDATE <= #{toDate}
+	    ]]>
+		</if>
+		ORDER BY A.SENO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="PexhibitionSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_SPECIAL_EXHIBITION A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromDate)">
+		<![CDATA[
+		   AND A.EDATE >= #{fromDate}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toDate)">
+		<![CDATA[
+		   AND A.SDATE <= #{toDate}
+	    ]]>
+		</if>
+	</select>
+
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Pexhibition">
+		SELECT A.SENO,
+			   A.TITLE,
+			   A.VIEW_CNT,
+			   A.SDATE,
+			   A.EDATE,
+			   A.SUMMARY,
+			   A.IMG,
+			   A.BANNER,
+			   A.PC_DESC,
+			   A.MO_DESC,
+			   A.PRODUCT_YN,
+			   A.GNB_YN,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_SPECIAL_EXHIBITION A
+		 WHERE SENO = #{seno}
+	</select>
+
+	<select id="productList" parameterType="java.lang.Integer" resultType="SeProduct">
+		<![CDATA[
+		SELECT A.SENO,
+			   A.PNO,
+			   B.PNAME,
+			   B.SALE_PRICE
+		  FROM T_SE_PRODUCT A
+		  	   INNER JOIN T_PRODUCT B
+		  	   	ON A.PNO = B.PNO
+		 WHERE A.SENO = #{seno}
+		ORDER BY A.RANK
+	   	]]>
+	</select>
+
+	<insert id="insert" parameterType="Pexhibition" useGeneratedKeys="true" keyProperty="seno" keyColumn="SENO">
+		INSERT
+		  INTO T_SPECIAL_EXHIBITION (
+			   SENO,
+			   TITLE,
+			   SDATE,
+			   EDATE,
+			   SUMMARY,
+			   IMG,
+			   BANNER,
+			   PC_DESC,
+			   MO_DESC,
+			   PRODUCT_YN,
+			   GNB_YN,
+			   STATUS,
+			   CUSER,
+			   CDATE,
+			   UUSER,
+			   UDATE
+		) VALUES (
+			   #{seno},
+			   #{title},
+			   #{sdate},
+			   #{edate},
+			   #{summary},
+			   #{img},
+			   #{banner},
+			   #{pcDesc},
+			   #{moDesc},
+			   #{productYn},
+			   #{gnbYn},
+			   #{status},
+			   #{cuser},
+			   NOW(),
+			   #{cuser},
+			   NOW()
+		)
+	</insert>
+
+	<update id="update" parameterType="Pexhibition">
+		UPDATE T_SPECIAL_EXHIBITION
+		   SET TITLE      = #{title},
+			   SDATE      = #{sdate},
+			   EDATE      = #{edate},
+			   SUMMARY    = #{summary},
+			   IMG        = #{img},
+			   BANNER	  = #{banner},
+			   PC_DESC    = #{pcDesc},
+			   MO_DESC    = #{moDesc},
+			   PRODUCT_YN = #{productYn},
+			   GNB_YN	  = #{gnbYn},
+			   STATUS     = #{status},
+			   UUSER	  = #{cuser},
+			   UDATE 	  = NOW()
+		 WHERE SENO 	  = #{seno}
+	</update>
+
+
+	<insert id="insertProduct" parameterType="SeProduct">
+		INSERT
+		  INTO T_SE_PRODUCT (
+			   SENO,
+			   PNO,
+			   RANK
+		) VALUES (
+			   #{seno},
+			   #{pno},
+			   #{rank}
+		)
+	</insert>
+
+	<delete id="deleteProduct" parameterType="java.lang.Integer">
+		DELETE FROM T_SE_PRODUCT
+		 WHERE SENO = #{seno}
+	</delete>
+
+
+</mapper>

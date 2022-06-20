@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Sensitive">
+	<select id="list" parameterType="SensitiveSearch" resultType="Sensitive">
+		<![CDATA[
+		SELECT A.SENSITIVE_NO,
+			   A.TITLE,
+			   A.CONTENT,
+			   A.STATUS,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME
+		  FROM T_SENSITIVE A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		ORDER BY A.SENSITIVE_NO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="SensitiveSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_SENSITIVE A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Sensitive">
+		SELECT SENSITIVE_NO,
+			   TITLE,
+			   CONTENT,
+			   STATUS,
+			   CUSER,
+			   CDATE,
+			   UUSER,
+			   UDATE
+		  FROM T_SENSITIVE
+		 WHERE SENSITIVE_NO = #{sensitiveNo}
+	</select>
+
+
+	<insert id="insert" parameterType="Sensitive">
+		INSERT INTO T_SENSITIVE (
+			TITLE,
+			CONTENT,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{title},
+			#{content},
+			#{status},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+
+	<update id="update" parameterType="Sensitive">
+		UPDATE T_SENSITIVE
+		   SET TITLE		= #{title},
+			   CONTENT		= #{content},
+			   STATUS		= #{status},
+			   UUSER		= #{cuser},
+			   UDATE		= NOW()
+		 WHERE SENSITIVE_NO	= #{sensitiveNo}
+	</update>
+
+</mapper>

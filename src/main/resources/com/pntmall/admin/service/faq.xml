@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Faq">
+	<select id="list" parameterType="FaqSearch" resultType="Faq">
+		<![CDATA[
+		SELECT A.FAQ_NO,
+			   A.CATE,
+			   B.NAME CATE_NAME,
+			   A.QUESTION,
+			   A.ANSWER,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_FAQ A
+		  	   INNER JOIN T_CODE B
+		  	      ON A.CATE = CONCAT(B.CODE1, B.CODE2)
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(question)">
+		   AND A.QUESTION LIKE CONCAT('%', #{question}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(cate)">
+		   AND A.CATE = #{cate}
+		</if>
+		ORDER BY A.FAQ_NO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="FaqSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_FAQ A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(question)">
+		   AND A.QUESTION LIKE CONCAT('%', #{question}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(cate)">
+		   AND A.CATE = #{cate}
+		</if>
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Faq">
+		SELECT A.FAQ_NO,
+			   A.CATE,
+			   B.NAME CATE_NAME,
+			   A.QUESTION,
+			   A.ANSWER,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.FREQUENT_YN,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_FAQ A
+		  	   INNER JOIN T_CODE B
+		  	      ON A.CATE = CONCAT(B.CODE1, B.CODE2)
+		 WHERE FAQ_NO = #{faqNo}
+	</select>
+
+
+	<insert id="insert" parameterType="Faq">
+		INSERT INTO T_FAQ (
+			CATE,
+			QUESTION,
+			ANSWER,
+			STATUS,
+			FREQUENT_YN,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{cate},
+			#{question},
+			#{answer},
+			#{status},
+			#{frequentYn},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+
+	<update id="update" parameterType="Faq">
+		UPDATE T_FAQ
+		   SET CATE			= #{cate},
+		       QUESTION		= #{question},
+			   ANSWER		= #{answer},
+			   STATUS		= #{status},
+			   FREQUENT_YN  = #{frequentYn},
+			   UUSER		= #{cuser},
+			   UDATE		= NOW()
+		 WHERE FAQ_NO	= #{faqNo}
+	</update>
+
+</mapper>

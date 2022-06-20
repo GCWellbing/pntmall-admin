@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Pbanner">
+
+	<select id="list" parameterType="PbannerSearch" resultType="Pbanner">
+		<![CDATA[
+		SELECT A.BNO,
+			   A.GUBUN,
+			   A.TITLE,
+			   A.SDATE,
+			   A.EDATE,
+			   A.REMARK,
+			   A.PC_IMG,
+			   A.PC_IMG_ALT,
+			   A.MO_IMG,
+			   A.MO_IMG_ALT,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_PBANNER A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromDate)">
+		<![CDATA[
+		   AND A.EDATE >= #{fromDate}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toDate)">
+		<![CDATA[
+		   AND A.SDATE <= #{toDate}
+	    ]]>
+		</if>
+		ORDER BY A.BNO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="PbannerSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_PBANNER A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(fromDate)">
+		<![CDATA[
+		   AND A.EDATE >= #{fromDate}
+	    ]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(toDate)">
+		<![CDATA[
+		   AND A.SDATE <= #{toDate}
+	    ]]>
+		</if>
+	</select>
+
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Pbanner">
+		SELECT A.BNO,
+			   A.GUBUN,
+			   A.TITLE,
+			   A.SDATE,
+			   A.EDATE,
+			   A.REMARK,
+			   A.PC_IMG,
+			   A.PC_IMG_ALT,
+			   A.MO_IMG,
+			   A.MO_IMG_ALT,
+			   A.STATUS,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE
+		  FROM T_PBANNER A
+		 WHERE BNO = #{bno}
+	</select>
+
+	<select id="productList" parameterType="java.lang.Integer" resultType="PbannerProduct">
+		<![CDATA[
+		SELECT A.BNO,
+			   A.PNO,
+			   B.PNAME,
+			   B.SALE_PRICE
+		  FROM T_PBANNER_PRODUCT A
+		  	   INNER JOIN T_PRODUCT B
+		  	   	ON A.PNO = B.PNO
+		 WHERE A.BNO = #{bno}
+	   	]]>
+	</select>
+
+	<insert id="insert" parameterType="Pbanner" useGeneratedKeys="true" keyProperty="bno" keyColumn="BNO">
+		INSERT
+		  INTO T_PBANNER (
+			   BNO,
+			   GUBUN,
+			   TITLE,
+			   SDATE,
+			   EDATE,
+			   REMARK,
+			   PC_IMG,
+			   PC_IMG_ALT,
+			   MO_IMG,
+			   MO_IMG_ALT,
+			   STATUS,
+			   CUSER,
+			   CDATE,
+			   UUSER,
+			   UDATE
+		) VALUES (
+			   #{bno},
+			   #{gubun},
+			   #{title},
+			   #{sdate},
+			   #{edate},
+			   #{remark},
+			   #{pcImg},
+			   #{pcImgAlt},
+			   #{moImg},
+			   #{moImgAlt},
+			   #{status},
+			   #{cuser},
+			   NOW(),
+			   #{cuser},
+			   NOW()
+		)
+	</insert>
+
+	<update id="update" parameterType="Pbanner">
+		UPDATE T_PBANNER
+		   SET GUBUN			= #{gubun},
+		   	   TITLE 			= #{title},
+			   SDATE 			= #{sdate},
+			   EDATE 			= #{edate},
+			   REMARK 			= #{remark},
+			   PC_IMG 			= #{pcImg},
+			   MO_IMG 			= #{moImg},
+			   STATUS 			= #{status},
+			   PC_IMG_ALT 		= #{pcImgAlt},
+			   MO_IMG_ALT		= #{moImgAlt},
+			   UUSER			= #{cuser},
+			   UDATE 			= NOW()
+		 WHERE BNO 				= #{bno}
+	</update>
+
+
+	<insert id="insertProduct" parameterType="PbannerProduct">
+		INSERT
+		  INTO T_PBANNER_PRODUCT (
+			   BNO,
+			   PNO
+		) VALUES (
+			   #{bno},
+			   #{pno}
+		)
+	</insert>
+
+	<delete id="deleteProduct" parameterType="java.lang.Integer">
+		DELETE FROM T_PBANNER_PRODUCT
+		 WHERE BNO = #{bno}
+	</delete>
+
+
+
+</mapper>

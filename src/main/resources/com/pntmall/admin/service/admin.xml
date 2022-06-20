@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Admin">
+	<select id="list" parameterType="AdminSearch" resultType="Admin">
+		<![CDATA[
+		SELECT A.ADMIN_NO,
+			   A.ADMIN_ID,
+			   A.NAME,
+			   A.CDATE,
+			   CASE WHEN A.STATUS = 'S' THEN '활성'
+			   		ELSE '비활성' END AS STATUS_NAME,
+			   A.CDATE,
+			   B.NAME TEAM_NAME
+		  FROM T_ADMIN A
+		  	   LEFT OUTER JOIN T_TEAM B
+		  	   	ON A.TEAM_NO = B.TEAM_NO
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(adminId)">
+		   AND A.ADMIN_ID LIKE CONCAT('%', #{adminId}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(name)">
+		   AND A.NAME LIKE CONCAT('%', #{name}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(teamNo)">
+		   AND A.TEAM_NO = #{teamNo}
+		</if>
+		ORDER BY CDATE DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="AdminSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_ADMIN A
+		  	   LEFT OUTER JOIN T_TEAM B
+		  	   	ON A.TEAM_NO = B.TEAM_NO
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(adminId)">
+		   AND A.ADMIN_ID LIKE CONCAT('%', #{adminId}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(name)">
+		   AND A.NAME LIKE CONCAT('%', #{name}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(teamNo)">
+		   AND A.TEAM_NO = #{teamNo}
+		</if>
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Admin">
+		SELECT ADMIN_NO,
+			   ADMIN_ID,
+			   NAME,
+			   PASSWD,
+			   EMAIL,
+			   MTEL,
+			   UPDATE_AUTH,
+			   TEAM_NO,
+			   LOGIN_FAIL_CNT,
+			   STATUS
+		  FROM T_ADMIN
+		 WHERE ADMIN_NO = #{adminNo}
+	</select>
+	
+	<select id="infoById" parameterType="java.lang.String" resultType="Admin">
+		SELECT ADMIN_NO,
+			   ADMIN_ID,
+			   NAME,
+			   PASSWD,
+			   EMAIL,
+			   MTEL,
+			   UPDATE_AUTH,
+			   TEAM_NO,
+			   LOGIN_FAIL_CNT,
+			   STATUS
+		  FROM T_ADMIN
+		 WHERE ADMIN_ID = #{adminId}
+	</select>
+	
+	<update id="updateFailCnt" parameterType="Admin">
+		UPDATE T_ADMIN
+		   SET LOGIN_FAIL_CNT = #{loginFailCnt}
+		 WHERE ADMIN_NO = #{adminNo}
+	</update>
+
+	<insert id="insertLog" parameterType="AdminLog">
+		INSERT INTO T_ADMIN_LOG (
+			ADMIN_NO, 
+			IP, 
+			SUCCESS_YN,
+			CDATE
+		) VALUES (
+			#{adminNo},
+			#{ip},
+			#{successYn},
+			now()
+		)
+	</insert>
+
+	<insert id="insert" parameterType="Admin" useGeneratedKeys="true" keyProperty="adminNo" keyColumn="ADMIN_NO">
+		INSERT INTO T_ADMIN (
+			ADMIN_ID,
+			NAME,
+			PASSWD,
+			EMAIL,
+			MTEL,
+		   	UPDATE_AUTH,
+			TEAM_NO,
+			LOGIN_FAIL_CNT,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{adminId},
+			#{name},
+			#{passwd},
+			#{email},
+			#{mtel},
+			#{updateAuth},
+			#{teamNo},
+			0,
+			#{status},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+	
+	<update id="update" parameterType="Admin">
+		UPDATE T_ADMIN
+		   SET NAME			= #{name},
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(passwd)">
+		   	   PASSWD		= #{passwd},
+		</if>
+			   EMAIL		= #{email},
+			   MTEL			= #{mtel},
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(updateAuth)">
+			   UPDATE_AUTH	= #{updateAuth},
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(teamNo)">
+			   TEAM_NO		= #{teamNo},
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+			   STATUS		= #{status},
+		</if>
+			   UUSER		= #{cuser},
+			   UDATE		= NOW()
+		 WHERE ADMIN_NO		= #{adminNo}
+	</update>
+	
+</mapper>

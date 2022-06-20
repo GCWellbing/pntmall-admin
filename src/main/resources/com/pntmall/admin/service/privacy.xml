@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Privacy">
+	<select id="list" parameterType="PrivacySearch" resultType="Privacy">
+		<![CDATA[
+		SELECT A.PRIVACY_NO,
+			   A.GUBUN,
+			   A.TITLE,
+			   A.CONTENT,
+			   A.STATUS,
+			   A.CUSER,
+			   A.CDATE,
+			   A.UUSER,
+			   A.UDATE,
+			   CASE WHEN A.STATUS = 'S' THEN '공개'
+			   		ELSE '비공개' END AS STATUS_NAME
+		  FROM T_PRIVACY A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gubun)">
+		   AND A.GUBUN = #{gubun}
+		</if>
+
+		ORDER BY A.PRIVACY_NO DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="count" parameterType="PrivacySearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_PRIVACY A
+		 WHERE A.STATUS <> 'D'
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(title)">
+		   AND A.TITLE LIKE CONCAT('%', #{title}, '%')
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND A.STATUS = #{status}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gubun)">
+		   AND A.GUBUN = #{gubun}
+		</if>
+	</select>
+
+	<select id="info" parameterType="java.lang.Integer" resultType="Privacy">
+		SELECT PRIVACY_NO,
+			   GUBUN,
+			   TITLE,
+			   CONTENT,
+			   STATUS,
+			   CUSER,
+			   CDATE,
+			   UUSER,
+			   UDATE
+		  FROM T_PRIVACY
+		 WHERE PRIVACY_NO = #{privacyNo}
+	</select>
+
+
+	<insert id="insert" parameterType="Privacy">
+		INSERT INTO T_PRIVACY (
+			GUBUN,
+			TITLE,
+			CONTENT,
+			STATUS,
+			CUSER,
+			CDATE,
+			UUSER,
+			UDATE
+		) VALUES (
+			#{gubun},
+			#{title},
+			#{content},
+			#{status},
+			#{cuser},
+			NOW(),
+			#{cuser},
+			NOW()
+		)
+	</insert>
+
+	<update id="update" parameterType="Privacy">
+		UPDATE T_PRIVACY
+		   SET GUBUN		= #{gubun},
+			   TITLE		= #{title},
+			   CONTENT		= #{content},
+			   STATUS		= #{status},
+			   UUSER		= #{cuser},
+			   UDATE		= NOW()
+		 WHERE PRIVACY_NO	= #{privacyNo}
+	</update>
+
+</mapper>

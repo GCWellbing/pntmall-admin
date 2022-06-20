@@ -1,0 +1,991 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Order">
+	<select id="list" parameterType="OrderSearch" resultType="Order">
+		<![CDATA[
+		SELECT O.ORDERID, 
+			   O.GUBUN,
+			   CASE WHEN O.GUBUN = 1 THEN '주문'
+					WHEN O.GUBUN = 2 THEN '교환'
+		            WHEN O.GUBUN = 3 THEN '반품'
+		            WHEN O.GUBUN = 4 THEN '재배송'
+			   END GUBUN_NAME,
+			   O.ORDER_GUBUN,
+			   CASE WHEN O.ORDER_GUBUN = 1 THEN '일반배송'
+					WHEN O.ORDER_GUBUN = 2 THEN '정기배송'
+		            WHEN O.ORDER_GUBUN = 3 THEN '병의원픽업'
+		            WHEN O.ORDER_GUBUN = 4 THEN '소분'
+			   END ORDER_GUBUN_NAME,
+			   O.ODATE,
+		       O.FIRST_ORDER_YN,
+		       O.MEM_NO,
+		       O.ONAME,
+		       O.OMTEL1,
+		       O.OMTEL2,
+		       O.OEMAIL,
+		       O.AMT,
+		       O.SHIP_AMT,
+		       O.TOT_AMT,
+		       O.GRADE_DISCOUNT,
+		       O.COUPON_DISCOUNT,
+		       O.SHIP_DISCOUNT,
+		       O.TOT_DISCOUNT,
+		       O.POINT,
+		       O.PAY_AMT,
+		       O.DEVICE,
+		       O.STATUS,
+		       O.ORG_ORDERID,
+		       M.MEM_ID,
+		       M.NAME MEM_NAME,
+		       M.EMAIL,
+		       M.MTEL1,
+		       M.MTEL2,
+		       M2.MEM_ID CLINIC_ID,
+		       C.CLINIC_NAME,
+		       (SELECT PNAME FROM T_ORDER_ITEM I 
+		         WHERE I.ORDERID = O.ORDERID 
+		           AND I.SHIP_NO = 1
+		        LIMIT 1) PNAME,
+		       (SELECT COUNT(*) FROM T_ORDER_ITEM I
+		         WHERE I.ORDERID = O.ORDERID) ITEM_COUNT,
+		       (SELECT SUM(POINT) FROM T_ORDER_ITEM I
+		         WHERE I.ORDERID = O.ORDERID) SUM_POINT,
+			   (SELECT NAME FROM T_CODE C1
+		         WHERE CONCAT(C1.CODE1, C1.CODE2) = O.PAY_TYPE) PAY_TYPE_NAME,
+		       (SELECT NAME FROM T_MEM_GRADE MG WHERE MG.GRADE_NO = O.GRADE_NO) GRADE_NAME,
+		       (SELECT BO_NAME FROM T_ORDER_STATUS_CODE OSC WHERE OSC.STATUS = O.STATUS) STATUS_NAME
+		  FROM T_ORDER O
+				LEFT OUTER JOIN T_MEMBER M
+					ON O.MEM_NO = M.MEM_NO
+				LEFT OUTER JOIN T_MEMBER M2
+					ON O.CLINIC_MEM_NO = M2.MEM_NO
+				LEFT OUTER JOIN T_CLINIC C
+					ON O.CLINIC_MEM_NO = C.MEM_NO
+		 WHERE 1 = 1
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(sdate)">
+		<![CDATA[
+		   AND O.ODATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(edate)">
+		<![CDATA[
+		   AND O.ODATE <= STR_TO_DATE(CONCAT(#{edate}, ' 23:59:59'), '%Y.%m.%d %H:%i:%s')
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(payType)">
+		   AND O.PAY_TYPE = #{payType}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(orderGubun)">
+		   AND O.ORDER_GUBUN = #{orderGubun}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gradeNo)">
+		   AND O.GRADE_NO = #{gradeNo}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(device)">
+		   AND O.DEVICE = #{device}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(firstOrderYn)">
+		   AND O.FIRST_ORDER_YN = #{firstOrderYn}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(spayAmt)">
+		<![CDATA[
+		   AND O.PAY_AMT >= #{spayAmt}
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(epayAmt)">
+		<![CDATA[
+		   AND O.PAY_AMT <= #{epayAmt}
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(keyword)">
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "1")'>
+		   AND O.ORDERID LIKE CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "2")'>
+		   AND M.MEM_ID LIKE CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "3")'>
+		   AND O.ONAME LIKE CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "4")'>
+		   AND CONCAT(O.OMTEL1, O.OMTEL2) LIKE CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "5")'>
+		   AND O.ORDERID IN (
+		   		SELECT ORDERID 
+		   		  FROM T_ORDER_ITEM OI
+		   		  		INNER JOIN T_PRODUCT P
+		   		  			ON OI.PNO = P.PNO
+		   		 WHERE P.MATNR LIKE CONCAT('%', #{keyword}, '%'))
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "6")'>
+		   AND O.ORDERID IN (
+		   		SELECT ORDERID 
+		   		  FROM T_ORDER_ITEM OI
+		   		 WHERE OI.PNO LIKE CONCAT('%', #{keyword}, '%'))
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "7")'>
+		   AND O.ORDERID IN (
+		   		SELECT ORDERID 
+		   		  FROM T_ORDER_ITEM OI
+		   		 WHERE OI.PNAME LIKE CONCAT('%', #{keyword}, '%'))
+			</if>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND O.STATUS IN 
+			<foreach collection="status" item="item" open="(" close=")" separator=",">
+				#{item}
+			</foreach>		   	
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memNo)">
+		   AND O.MEM_NO = #{memNo}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicId)">
+		   AND O.CLINIC_MEM_NO = (SELECT MEM_NO FROM T_MEMBER WHERE MEM_ID = #{clinicId})
+		</if>
+		ORDER BY O.ORDERID DESC
+		LIMIT #{limit} OFFSET #{offset} 
+	</select>
+
+	<select id="count" parameterType="OrderSearch" resultType="java.lang.Integer">
+		<![CDATA[
+		SELECT COUNT(*)
+		  FROM T_ORDER O
+				LEFT OUTER JOIN T_MEMBER M
+					ON O.MEM_NO = M.MEM_NO
+				LEFT OUTER JOIN T_MEMBER M2
+					ON O.CLINIC_MEM_NO = M2.MEM_NO
+				LEFT OUTER JOIN T_CLINIC C
+					ON O.CLINIC_MEM_NO = C.MEM_NO
+		 WHERE 1 = 1
+		]]>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(sdate)">
+		<![CDATA[
+		   AND O.ODATE >= STR_TO_DATE(#{sdate}, '%Y.%m.%d')
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(edate)">
+		<![CDATA[
+		   AND O.ODATE <= STR_TO_DATE(CONCAT(#{edate}, ' 23:59:59'), '%Y.%m.%d %H:%i:%s')
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(payType)">
+		   AND O.PAY_TYPE = #{payType}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(orderGubun)">
+		   AND O.ORDER_GUBUN = #{orderGubun}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gradeNo)">
+		   AND O.GRADE_NO = #{gradeNo}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(device)">
+		   AND O.DEVICE = #{device}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(firstOrderYn)">
+		   AND O.FIRST_ORDER_YN = #{firstOrderYn}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(spayAmt)">
+		<![CDATA[
+		   AND O.PAY_AMT >= #{spayAmt}
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(epayAmt)">
+		<![CDATA[
+		   AND O.PAY_AMT <= #{epayAmt}
+		]]>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(keyword)">
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "1")'>
+		   AND O.ORDERID LIKE CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "2")'>
+		   AND M.MEM_ID LIKE CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "3")'>
+		   AND O.ONAME LIKE CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "4")'>
+		   AND CONCAT(O.OMTEL1, O.OMTEL2) LIKE CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "5")'>
+		   AND O.ORDERID IN (
+		   		SELECT ORDERID 
+		   		  FROM T_ORDER_ITEM OI
+		   		  		INNER JOIN T_PRODUCT P
+		   		  			ON OI.PNO = P.PNO
+		   		 WHERE P.MATNR LIKE CONCAT('%', #{keyword}, '%'))
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "6")'>
+		   AND O.ORDERID IN (
+		   		SELECT ORDERID 
+		   		  FROM T_ORDER_ITEM OI
+		   		 WHERE OI.PNO LIKE CONCAT('%', #{keyword}, '%'))
+			</if>
+			<if test='@com.pntmall.common.mybatis.Check@equals(keytype, "7")'>
+		   AND O.ORDERID IN (
+		   		SELECT ORDERID 
+		   		  FROM T_ORDER_ITEM OI
+		   		 WHERE OI.PNAME LIKE CONCAT('%', #{keyword}, '%'))
+			</if>
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(status)">
+		   AND O.STATUS IN 
+			<foreach collection="status" item="item" open="(" close=")" separator=",">
+				#{item}
+			</foreach>		   	
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(memNo)">
+		   AND O.MEM_NO = #{memNo}
+		</if>
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(clinicId)">
+		   AND O.CLINIC_MEM_NO = (SELECT MEM_NO FROM T_MEMBER WHERE MEM_ID = #{clinicId})
+		</if>
+	</select>
+
+	<select id="statusList" resultType="OrderStatusCode">
+		SELECT *
+		  FROM T_ORDER_STATUS_CODE
+		 ORDER BY STATUS
+	</select>
+	
+	<select id="orderInfo" parameterType="java.lang.String" resultType="Order">
+		SELECT O.ORDERID,
+			   O.GUBUN,
+			   O.ORDER_GUBUN,
+			   O.MEM_NO,
+			   O.GRADE_NO,
+			   O.ONAME,
+			   O.OMTEL1,
+			   O.OMTEL2,
+			   O.OEMAIL,
+			   O.AMT,
+			   O.SHIP_AMT,
+			   O.TOT_AMT,
+			   O.GRADE_DISCOUNT,
+			   O.COUPON_DISCOUNT,
+			   O.SHIP_DISCOUNT,
+			   O.TOT_DISCOUNT,
+			   O.POINT,
+			   O.PAY_AMT,
+			   O.PAY_TYPE,
+			   O.DEVICE,
+			   O.FIRST_ORDER_YN,
+			   O.CLINIC_MEM_NO,
+			   O.ODATE,
+			   O.STATUS,
+			   O.SHIP_MCOUPONID,
+			   O.ORG_ORDERID,
+			   O.PICKUP_CLINIC,
+			   O.PICKUP_DATE,
+			   O.PICKUP_TIME,
+			   CASE WHEN O.GUBUN = 1 THEN '주문'
+					WHEN O.GUBUN = 2 THEN '교환'
+		            WHEN O.GUBUN = 3 THEN '반품'
+		            WHEN O.GUBUN = 4 THEN '재배송'
+			   END GUBUN_NAME,
+			   CASE WHEN O.ORDER_GUBUN = 1 THEN '일반배송'
+					WHEN O.ORDER_GUBUN = 2 THEN '정기배송'
+		            WHEN O.ORDER_GUBUN = 3 THEN '병의원픽업'
+		            WHEN O.ORDER_GUBUN = 4 THEN '소분'
+			   END ORDER_GUBUN_NAME,
+		       (SELECT NAME FROM T_MEM_GRADE MG 
+		         WHERE MG.GRADE_NO = O.GRADE_NO) GRADE_NAME,
+		       (SELECT MEM_ID FROM T_MEMBER M 
+		         WHERE M.MEM_NO = O.MEM_NO) MEM_ID,
+		       (SELECT MEM_ID FROM T_MEMBER C 
+		         WHERE C.MEM_NO = O.CLINIC_MEM_NO) CLINIC_ID,
+		       (SELECT BO_NAME FROM T_ORDER_STATUS_CODE OSC 
+		         WHERE OSC.STATUS = O.STATUS) STATUS_NAME,
+			   (SELECT NAME FROM T_CODE C1
+		         WHERE CONCAT(C1.CODE1, C1.CODE2) = O.PAY_TYPE) PAY_TYPE_NAME,
+			   (SELECT CLINIC_NAME FROM T_CLINIC C2
+			   	 WHERE C2.MEM_NO = O.PICKUP_CLINIC) PICKUP_CLINIC_NAME	
+		  FROM T_ORDER O
+		 WHERE O.ORDERID = #{orderid}
+	</select>
+	
+	<select id="memoInfo" parameterType="java.lang.String" resultType="OrderMemo">
+		SELECT A.MEMO,
+			   A.CUSER,
+			   B.ADMIN_ID 
+		  FROM T_ORDER_MEMO A
+		  		INNER JOIN T_ADMIN B
+		  			ON A.CUSER = B.ADMIN_NO 
+		 WHERE A.ORDERID = #{orderid} 
+		ORDER BY MNO DESC 
+		LIMIT 1
+	</select>
+	
+	<select id="addrInfo" parameterType="java.lang.String" resultType="OrderAddr">
+		SELECT OA.SNAME,
+			   OA.SZIP,
+			   OA.SADDR1,
+			   OA.SADDR2,
+			   OA.SMTEL1,
+			   OA.SMTEL2,
+			   OA.STEL1,
+			   OA.STEL2,
+			   OA.MSG
+		  FROM T_ORDER_ADDR OA
+		 WHERE OA.ANO = (SELECT MAX(ANO) FROM T_ORDER_ADDR A WHERE A.ORDERID = #{orderid})
+	</select>
+	
+	<select id="refundInfo" parameterType="java.lang.String" resultType="OrderRefund">
+		SELECT R.BANK,
+			   R.ACCOUNT,
+			   R.DEPOSITOR,
+			   R.AMT,
+			   R.POINT,
+			   R.REASON,
+			   R.REASON2,
+			   R.REJECT_REASON
+		  FROM T_ORDER_REFUND R
+		 WHERE R.RNO = (SELECT MAX(RNO) FROM T_ORDER_REFUND A WHERE A.ORDERID = #{orderid})
+	</select>
+	
+	<select id="shipList" parameterType="java.lang.String" resultType="OrderShip">
+		SELECT S.ORDERID,
+			   S.SHIP_NO,
+			   S.SHIP_GUBUN,
+			   S.SHIPPER,
+			   S.INVOICE,
+			   (SELECT NAME FROM T_CODE C WHERE CONCAT(C.CODE1, C.CODE2) = S.SHIPPER) SHIPPER_NAME,
+               (SELECT MIN(CDATE) FROM T_ORDER_STATUS_LOG C WHERE C.ORDERID = S.ORDERID AND C.STATUS = '150') DATE150,
+               (SELECT MIN(CDATE) FROM T_ORDER_STATUS_LOG C WHERE C.ORDERID = S.ORDERID AND C.STATUS = '160') DATE160,
+               (SELECT COUNT(*) FROM T_ORDER_ITEM I
+		         WHERE I.ORDERID = S.ORDERID AND I.SHIP_NO = S.SHIP_NO) ITEM_COUNT
+		  FROM T_ORDER_SHIP S
+		 WHERE S.ORDERID = #{orderid}
+	</select>
+	
+	<select id="itemList" parameterType="OrderShip" resultType="OrderItem">
+		SELECT I.ITEM_NO,
+			   I.ORDERID,
+			   I.SHIP_NO,
+			   I.PNO,
+			   I.QTY,
+			   I.PNAME,
+			   I.SALE_PRICE,
+			   I.MEM_PRICE,
+			   I.DISCOUNT,
+			   I.APPLY_PRICE,
+			   I.POINT,
+			   I.RETURN_QTY,
+			   I.EXCHANGE_QTY,
+			   I.MCOUPONID,
+			   I.ORG_ITEM_NO,
+			   P.MATNR,
+			   P.SUPPLY_PRICE,
+			   P.COLD_YN,
+			   P.DOSAGE,
+			   P.DOSE_CNT,
+			   P.DOSE_MONTH,
+			   P.DOSE_METHOD,
+			   SP.NETPR,
+               (SELECT GROUP_CONCAT(CONCAT(P.PNAME) SEPARATOR '|') 
+			      FROM T_ORDER_GIFT G
+			      	   INNER JOIN T_PRODUCT P
+			      	   	ON G.PNO = P.PNO 
+			     WHERE G.ITEM_NO = I.ITEM_NO) GIFT
+		  FROM T_ORDER_ITEM I
+		  		INNER JOIN T_PRODUCT P
+		  			ON I.PNO = P.PNO
+		  		INNER JOIN T_SAP_PRODUCT SP
+		  			ON P.MATNR = SP.MATNR
+		 WHERE I.ORDERID = #{orderid}
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(shipNo)">
+		   AND I.SHIP_NO = #{shipNo}
+		</if>
+	</select>	
+	 
+	<insert id="insertMemo" parameterType="OrderMemo">
+		INSERT INTO T_ORDER_MEMO (
+			ORDERID,
+			MEMO,
+			CUSER,
+			CDATE
+		) VALUES (
+			#{orderid},
+			#{memo},
+			#{cuser},
+			NOW()
+		)
+	</insert>
+	
+	<select id="statusLogList" parameterType="java.lang.String" resultType="OrderStatusCode">
+		SELECT A.STATUS,
+			   A.CUSER,
+			   A.CDATE,
+			   C.BO_NAME,
+			   C.FE_NAME,
+			   <include refid="Common.cuser">
+		       	<property name="cuser" value="A.CUSER" />
+		       </include> 
+		  FROM T_ORDER_STATUS_LOG A
+		  		INNER JOIN T_ORDER_STATUS_CODE C
+		  			ON A.STATUS = C.STATUS
+		 WHERE A.ORDERID = #{orderid}
+		ORDER BY A.CDATE DESC
+	</select>
+	
+	<select id="paymentLog" parameterType="PaymentLog" resultType="PaymentLog">
+		SELECT ORDERID,
+			   GUBUN,
+			   PAY_TYPE,
+			   PAY_AMT,
+			   LOG,
+			   CDATE
+		  FROM T_PAYMENT_LOG
+		 WHERE ORDERID = #{orderid}
+		<if test="@com.pntmall.common.mybatis.Check@notEmpty(gubun)">
+		   AND GUBUN = #{gubun} 
+		</if>
+	</select>
+	
+	<insert id="insert" parameterType="Order">
+		INSERT INTO T_ORDER (
+			ORDERID,
+			GROUPID,
+			GUBUN,
+			ORDER_GUBUN,
+			MEM_NO,
+			GRADE_NO,
+			CLINIC_MEM_NO,
+			ONAME,
+			OMTEL1,
+			OMTEL2,
+			OTEL1,
+			OTEL2,
+			OEMAIL,
+			AMT,
+			SHIP_AMT,
+			TOT_AMT,
+			GRADE_DISCOUNT,
+			COUPON_DISCOUNT,
+			SHIP_DISCOUNT,
+			TOT_DISCOUNT,
+			POINT,
+			PAY_AMT,
+			PAY_TYPE,
+			DEVICE,
+			SHIP_MCOUPONID,
+			FIRST_ORDER_YN,
+			STATUS,
+			PICKUP_CLINIC,
+			PICKUP_DATE,
+			PICKUP_TIME,
+			ESCROW,
+			ESCROW_TRAN,
+			ODATE,
+			ORG_ORDERID
+		) VALUES (
+			#{orderid},
+			#{groupid},
+			#{gubun},
+			#{orderGubun},
+			#{memNo},
+			#{gradeNo},
+			#{clinicMemNo},
+			#{oname},
+			#{omtel1},
+			#{omtel2},
+			#{otel1},
+			#{otel2},
+			#{oemail},
+			#{amt},
+			#{shipAmt},
+			#{totAmt},
+			#{gradeDiscount},
+			#{couponDiscount},
+			#{shipDiscount},
+			#{totDiscount},
+			#{point},
+			#{payAmt},
+			#{payType},
+			#{device},
+			#{shipMcouponid},
+			IFNULL((SELECT 'N' FROM T_ORDER O WHERE O.MEM_NO = #{memNo} LIMIT 1), 'Y'),
+			#{status},
+			#{pickupClinic},
+			#{pickupDate},
+			#{pickupTime},
+			#{escrow},
+			#{escrowTran},
+			NOW(),
+			#{orgOrderid}
+		)
+	</insert>
+	
+	<insert id="insertAddr" parameterType="OrderAddr">
+		INSERT INTO T_ORDER_ADDR (
+			ORDERID,
+			SNAME,
+			SZIP,
+			SADDR1,
+			SADDR2,
+			SMTEL1,
+			SMTEL2,
+			STEL1,
+			STEL2,
+			MSG,
+			CUSER,
+			CDATE
+		) VALUES (
+			#{orderid},
+			#{sname},
+			#{szip},
+			#{saddr1},
+			#{saddr2},
+			#{smtel1},
+			#{smtel2},
+			#{stel1},
+			#{stel2},
+			#{msg},
+			#{cuser},
+			NOW()
+		)
+	</insert>
+	 
+	<insert id="insertRefund" parameterType="OrderRefund">
+		INSERT INTO T_ORDER_REFUND (
+			ORDERID,
+			BANK,
+			ACCOUNT,
+			DEPOSITOR,
+			AMT,
+			POINT,
+			REASON,
+			REASON2,
+			REJECT_REASON,
+			CUSER,
+			CDATE
+		) VALUES (
+			#{orderid},
+			#{bank},
+			#{account},
+			#{depositor},
+			#{amt},
+			#{point},
+			#{reason},
+			#{reason2},
+			#{rejectReason},
+			#{cuser},
+			NOW()
+		)
+	</insert>
+	 
+	<insert id="insertShip" parameterType="OrderShip">
+		INSERT INTO T_ORDER_SHIP (
+			ORDERID,
+			SHIP_NO,
+			SHIP_GUBUN,
+			DELIVERY_YN
+		) VALUES (
+			#{orderid},
+			#{shipNo},
+			#{shipGubun},
+			#{deliveryYn}
+		)
+	</insert>
+	
+	<insert id="insertItem" parameterType="OrderItem" useGeneratedKeys="true" keyProperty="itemNo" keyColumn="ITEM_NO">
+		INSERT INTO T_ORDER_ITEM (
+			ORDERID,
+			SHIP_NO,
+			PNO,
+			QTY,
+			PNAME,
+			SALE_PRICE,
+			MEM_PRICE,
+			DISCOUNT,
+			APPLY_PRICE,
+			POINT,
+			RETURN_QTY,
+			EXCHANGE_QTY,
+			MCOUPONID,
+			ORG_ITEM_NO
+		) VALUES (
+			#{orderid},
+			#{shipNo},
+			#{pno},
+			#{qty},
+			#{pname},
+			#{salePrice},
+			#{memPrice},
+			#{discount},
+			#{applyPrice},
+			#{point},
+			0,
+			0,
+			#{mcouponid},
+			#{orgItemNo}
+		)
+	</insert>
+	
+	<insert id="insertGift" parameterType="OrderGift">
+		INSERT INTO T_ORDER_GIFT (
+			ITEM_NO,
+			PNO,
+			QTY,
+			PNAME
+		) VALUES (
+			#{itemNo},
+			#{pno},
+			#{qty},
+			#{pname}
+		)
+	</insert>
+
+	<update id="updateStatus" parameterType="Order">
+		UPDATE T_ORDER
+		   SET STATUS	= #{status}
+		 WHERE ORDERID	= #{orderid}
+	</update> 
+	
+	<insert id="insertStatusLog" parameterType="Order">
+		INSERT T_ORDER_STATUS_LOG (
+			ORDERID,
+			STATUS,
+			CUSER,
+			CDATE
+		) VALUES (
+			#{orderid},
+			#{status},
+			#{cuser},
+			NOW()
+		)
+	</insert>
+
+	<insert id="insertPaymentLog" parameterType="PaymentLog" useGeneratedKeys="true" keyProperty="plogNo" keyColumn="PLOG_NO">
+		INSERT INTO T_PAYMENT_LOG (
+			ORDERID,
+			GUBUN,
+			PAY_TYPE,
+			PAY_AMT,
+			LOG,
+			CDATE
+		) VALUE (
+			#{orderid},
+			#{gubun},
+			#{payType},
+			#{payAmt},
+			#{log},
+			NOW()
+		)
+	</insert>
+
+	<update id="updateReturnQty" parameterType="OrderItem">
+		UPDATE T_ORDER_ITEM
+		   SET RETURN_QTY 	= RETURN_QTY + #{qty}
+		 WHERE ITEM_NO		= #{itemNo}
+	</update>
+
+	<update id="updateExchangeQty" parameterType="OrderItem">
+		UPDATE T_ORDER_ITEM
+		   SET EXCHANGE_QTY 	= EXCHANGE_QTY + #{qty}
+		 WHERE ITEM_NO			= #{itemNo}
+	</update>
+
+	<insert id="insertReturnOrder" parameterType="Order">
+		INSERT INTO T_ORDER (
+			ORDERID,
+			GROUPID,
+			GUBUN,
+			ORDER_GUBUN,
+			MEM_NO,
+			GRADE_NO,
+			CLINIC_MEM_NO,
+			ONAME,
+			OMTEL1,
+			OMTEL2,
+			OTEL1,
+			OTEL2,
+			OEMAIL,
+			PAY_TYPE,
+			DEVICE,
+			FIRST_ORDER_YN,
+			STATUS,
+			ODATE,
+			ORG_ORDERID
+		) 
+		SELECT #{orderid},
+			   #{orderid},
+			   #{gubun},
+			   ORDER_GUBUN,
+			   MEM_NO,
+			   GRADE_NO,
+			   CLINIC_MEM_NO,
+			   ONAME,
+			   OMTEL1,
+			   OMTEL2,
+			   OTEL1,
+			   OTEL2,
+			   OEMAIL,
+			   PAY_TYPE,
+			   #{device},
+			   'N',
+			   #{status},
+			   NOW(),
+			   ORDERID
+		  FROM T_ORDER
+		 WHERE ORDERID = #{orgOrderid}
+	</insert>
+	
+	<insert id="copyOrder" parameterType="Order">
+		INSERT INTO T_ORDER (
+			ORDERID,
+			GROUPID,
+			GUBUN,
+			ORDER_GUBUN,
+			MEM_NO,
+			GRADE_NO,
+			CLINIC_MEM_NO,
+			ONAME,
+			OMTEL1,
+			OMTEL2,
+			OTEL1,
+			OTEL2,
+			OEMAIL,
+			DEVICE,
+			STATUS,
+			ODATE,
+			ORG_ORDERID
+		) 
+		SELECT #{orderid},
+			   GROUPID,
+			   #{gubun},
+			   ORDER_GUBUN,
+			   MEM_NO,
+			   GRADE_NO,
+			   CLINIC_MEM_NO,
+			   ONAME,
+			   OMTEL1,
+			   OMTEL2,
+			   OTEL1,
+			   OTEL2,
+			   OEMAIL,
+			   DEVICE,
+			   #{status},
+			   NOW(),
+			   #{orgOrderid}
+		  FROM T_ORDER
+		 WHERE ORDERID = #{orgOrderid}
+	</insert>
+	
+	<insert id="copyAddr" parameterType="Order">
+		INSERT INTO T_ORDER_ADDR (
+			ORDERID,
+			SNAME,
+			SZIP,
+			SADDR1,
+			SADDR2,
+			SMTEL1,
+			SMTEL2,
+			STEL1,
+			STEL2,
+			MSG,
+			CUSER,
+			CDATE
+		) 
+		SELECT #{orderid},
+			   SNAME,
+			   SZIP,
+			   SADDR1,
+			   SADDR2,
+			   SMTEL1,
+			   SMTEL2,
+			   STEL1,
+			   STEL2,
+			   MSG,
+			   #{cuser},
+			   NOW()
+		  FROM T_ORDER_ADDR
+		 WHERE ORDERID = #{orgOrderid}
+	</insert>
+	 
+	<insert id="copyShip" parameterType="OrderItem">
+		INSERT INTO T_ORDER_SHIP (
+			ORDERID,
+			SHIP_NO,
+			SHIP_GUBUN,
+			DELIVERY_YN
+		) 
+		SELECT #{orderid},
+			   1,
+			   1,
+			   'N'
+		  FROM T_ORDER_SHIP
+		 WHERE ORDERID	= #{orgOrderid}
+		   AND SHIP_NO	= 1
+	</insert>
+	
+	<insert id="copyItem" parameterType="OrderItem" useGeneratedKeys="true" keyProperty="itemNo" keyColumn="ITEM_NO">
+		INSERT INTO T_ORDER_ITEM (
+			ORDERID,
+			SHIP_NO,
+			PNO,
+			QTY,
+			PNAME,
+			SALE_PRICE,
+			MEM_PRICE,
+			DISCOUNT,
+			APPLY_PRICE,
+			POINT,
+			RETURN_QTY,
+			EXCHANGE_QTY,
+			MCOUPONID,
+			ORG_ITEM_NO
+		)
+		SELECT #{orderid},
+			   1,
+			   PNO,
+			   #{returnQty},
+			   PNAME,
+			   FLOOR(SALE_PRICE * #{returnQty} / QTY),
+			   FLOOR(MEM_PRICE * #{returnQty} / QTY),
+			   FLOOR(DISCOUNT * #{returnQty} / QTY),
+			   FLOOR(APPLY_PRICE * #{returnQty} / QTY),
+			   FLOOR(POINT * #{returnQty} / QTY),
+			   0,
+			   0,
+			   NULL,
+			   #{orgItemNo}
+		  FROM T_ORDER_ITEM
+		 WHERE ITEM_NO		= #{itemNo}
+	</insert>
+	
+	<insert id="copyGift" parameterType="OrderItem">
+		INSERT INTO T_ORDER_GIFT (
+			ITEM_NO,
+			PNO,
+			QTY,
+			PNAME
+		) 
+		SELECT #{itemNo},
+			   PNO,
+			   #{returnQty},
+			   PNAME
+		  FROM T_ORDER_GIFT A
+		 WHERE A.ITEM_NO = #{itemNo}
+	</insert>
+	
+	<select id="returnItemList" parameterType="java.lang.String" resultType="OrderItem">
+		<![CDATA[
+		SELECT O.ORDERID,
+			   O.ODATE CDATE,
+			   O.ORG_ORDERID,
+			   S.SHIP_NO,
+			   I.PNO,
+			   I.PNAME,
+			   I.QTY,
+			   I.APPLY_PRICE,
+			   P.MATNR,
+			   (SELECT BO_NAME FROM T_ORDER_STATUS_CODE C WHERE C.STATUS = O.STATUS) STATUS_NAME
+		  FROM T_ORDER O
+		  		INNER JOIN T_ORDER_SHIP S
+		  			ON O.ORDERID = S.ORDERID
+		  		INNER JOIN T_ORDER_ITEM I
+		  			ON I.ORDERID = O.ORDERID
+		  			AND I.SHIP_NO = S.SHIP_NO
+		  		INNER JOIN T_PRODUCT P
+		  			ON I.PNO = P.PNO
+		 WHERE O.ORG_ORDERID = #{orderid}
+		   AND O.ORDERID <> #{orderid}
+		ORDER BY I.ORDERID, I.SHIP_NO, I.ITEM_NO
+		]]>
+	</select>
+
+	<select id="orgItemList" parameterType="java.lang.String" resultType="OrderItem">
+		<![CDATA[
+		SELECT O.ORDERID,
+			   O.ODATE CDATE,
+			   S.SHIP_NO,
+			   I.PNO,
+			   I.PNAME,
+			   I.QTY,
+			   I.APPLY_PRICE,
+			   P.MATNR,
+			   (SELECT BO_NAME FROM T_ORDER_STATUS_CODE C WHERE C.STATUS = O.STATUS) STATUS_NAME
+		  FROM T_ORDER O
+		  		INNER JOIN T_ORDER_SHIP S
+		  			ON O.ORDERID = S.ORDERID
+		  		INNER JOIN T_ORDER_ITEM I
+		  			ON I.ORDERID = O.ORDERID
+		  			AND I.SHIP_NO = S.SHIP_NO
+		  		INNER JOIN T_PRODUCT P
+		  			ON I.PNO = P.PNO
+		 WHERE O.ORDERID = #{orgOrderid}
+		ORDER BY I.ORDERID, I.SHIP_NO, I.ITEM_NO
+		]]>
+	</select>
+
+	<select id="itemInfo" parameterType="java.lang.Integer" resultType="OrderItem">
+		SELECT *
+		  FROM T_ORDER_ITEM
+		 WHERE ITEM_NO = #{itemNo}
+	</select>
+
+	<select id="giftList" parameterType="java.lang.Integer" resultType="OrderGift">
+		SELECT *
+		  FROM T_ORDER_GIFT
+		 WHERE ITEM_NO = #{itemNo}
+	</select>
+
+	<select id="listForXml" resultType="Order">
+		SELECT A.ORDERID,
+			   A.ODATE,
+			   A.ONAME,
+			   B.MEM_ID
+		  FROM T_ORDER A
+		  		INNER JOIN T_MEMBER B
+		  			ON A.MEM_NO = B.MEM_NO
+		 WHERE A.GUBUN = 1
+		   AND A.ORDER_GUBUN = 4
+		   AND A.STATUS IN ('120', '130')
+	</select>
+
+	<update id="updateInvoice" parameterType="OrderShip">
+		UPDATE T_ORDER_SHIP
+		   SET SHIPPER		= #{shipper},
+		       INVOICE		= #{invoice}
+		 WHERE ORDERID		= #{orderid}
+		   AND SHIP_NO		= #{shipNo}
+	</update>
+
+	<select id="paymemtLogInfoByNo" parameterType="java.lang.Integer" resultType="PaymentLog">
+		SELECT A.PLOG_NO,
+			   A.ORDERID,
+			   A.GUBUN,
+			   A.PAY_TYPE,
+			   A.PAY_AMT,
+			   A.LOG,
+			   A.CDATE,
+			   O.ORDER_GUBUN,
+			   C.BUSINESS_NO,
+			   C.BUSINESS_NO2
+		  FROM T_PAYMENT_LOG A
+		  		INNER JOIN T_ORDER O
+		  			ON A.ORDERID = O.ORDERID
+		  		INNER JOIN T_CLINIC C
+		  			ON O.CLINIC_MEM_NO = C.MEM_NO
+		 WHERE A.PLOG_NO = #{plogNo}
+	</select>
+
+	<update id="updatePaymentLogSap" parameterType="PaymentLog">
+		UPDATE T_PAYMENT_LOG
+		   SET SAP_RESULT	= #{sapResult},
+		   	   SAP_MSG		= #{sapMsg},
+		   	   SAP_DATE		= NOW()
+		 WHERE PLOG_NO		= #{plogNo} 
+	</update>
+
+	<select id="totOrderInfo" parameterType="java.lang.Integer" resultType="Param">
+		SELECT COUNT(*) CNT, IFNULL(SUM(PAY_AMT), 0) PAY_AMT
+		  FROM T_ORDER
+		 WHERE MEM_NO = #{memNo}
+		   AND STATUS = '180'
+	</select>
+
+</mapper>
