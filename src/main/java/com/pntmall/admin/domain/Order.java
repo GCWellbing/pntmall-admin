@@ -63,7 +63,8 @@ public class Order extends Domain {
 	private String mtel1;
 	private String mtel2;
 	private String clinicName;
-	
+	private Date Cdate;
+
 	public String getOrderid() {
 		return orderid;
 	}
@@ -377,7 +378,13 @@ public class Order extends Domain {
 		this.mtel2 = mtel2;
 	}
 
-	
-	
-	
+	@Override
+	public Date getCdate() {
+		return Cdate;
+	}
+
+	@Override
+	public void setCdate(Date cdate) {
+		Cdate = cdate;
+	}
 }

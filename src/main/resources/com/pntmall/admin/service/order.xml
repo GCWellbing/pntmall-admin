@@ -18,6 +18,7 @@
 		            WHEN O.ORDER_GUBUN = 4 THEN '소분'
 			   END ORDER_GUBUN_NAME,
 			   O.ODATE,
+			   D.CDATE,
 		       O.FIRST_ORDER_YN,
 		       O.MEM_NO,
 		       O.ONAME,
@@ -62,6 +63,9 @@
 					ON O.CLINIC_MEM_NO = M2.MEM_NO
 				LEFT OUTER JOIN T_CLINIC C
 					ON O.CLINIC_MEM_NO = C.MEM_NO
+				LEFT JOIN T_ORDER_STATUS_LOG D
+					ON O.ORDERID = D.ORDERID
+					AND D.STATUS = 180
 		 WHERE 1 = 1
 		]]>
 		<if test="@com.pntmall.common.mybatis.Check@notEmpty(sdate)">
